@@ -1,0 +1,79 @@
+{
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run build"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
+
+// firebase/firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+    
+    // Salons collection
+    match /salons/{salonId} {
+      allow read: if true; // Public read for discovery
+      allow write: if isAuthenticated(); // Only authenticated users can modify
+      
+      // Stylists subcollection
+      match /stylists/{stylistId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+      
+      // Queue subcollection
+      match /queue/{checkInId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated();
+      }
+    }
+    
+    // Ratings collection
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+    
+    // Analytics collection
+    match /analytics/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only cloud functions can write
+    }
+  }
+}
