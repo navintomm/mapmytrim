@@ -1,0 +1,11 @@
+# Ignore Firebase Functions directory
+firebase/
+
+# Ignore Firebase config files
+.firebaserc
+firebase.json
+
+# Ignore other unnecessary files
+node_modules/
+.next/
+.git/
