@@ -34,6 +34,11 @@ export const useAuth = () => {
             localStorage.removeItem('mapmytrim_user');
           }
           setLoading(false);
+        }, (error) => {
+          console.error("Auth subscription error:", error);
+          // In case of error (e.g. offline), we might want to stop loading
+          // and maybe rely on what we have or show error
+          setLoading(false);
         });
       } else {
         setUser(null);

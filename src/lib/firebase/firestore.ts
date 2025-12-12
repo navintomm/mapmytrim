@@ -46,16 +46,24 @@ export const updateUser = async (userId: string, data: Partial<User>) => {
 
 export const subscribeUser = (
   userId: string,
-  callback: (user: User | null) => void
+  callback: (user: User | null) => void,
+  onError?: (error: Error) => void
 ) => {
   const userRef = doc(db, 'users', userId);
-  return onSnapshot(userRef, (doc) => {
-    if (doc.exists()) {
-      callback({ id: doc.id, ...doc.data() } as User);
-    } else {
-      callback(null);
+  return onSnapshot(
+    userRef,
+    (doc) => {
+      if (doc.exists()) {
+        callback({ id: doc.id, ...doc.data() } as User);
+      } else {
+        callback(null);
+      }
+    },
+    (error) => {
+      console.error("Error subscribing to user:", error);
+      if (onError) onError(error);
     }
-  });
+  );
 };
 
 export const updateSalon = async (salonId: string, data: Partial<Salon>) => {

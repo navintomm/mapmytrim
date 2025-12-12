@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, initializeFirestore } from 'firebase/firestore';
 import { getFunctions, Functions } from 'firebase/functions';
 
 const firebaseConfig = {
@@ -20,12 +20,16 @@ let functions: Functions;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+  });
   functions = getFunctions(app);
 } else {
   app = getApps()[0];
   auth = getAuth(app);
-  db = getFirestore(app);
+  db = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+  });
   functions = getFunctions(app);
 }
 
