@@ -31,14 +31,12 @@ export default function HomePage() {
   }, [user, authLoading, router]);
 
   const handleSalonClick = (salon: Salon) => {
-    const encodedId = encodeURIComponent(salon.id);
     console.log('🔍 Navigating to salon:', {
-      originalId: salon.id,
-      encodedId,
+      id: salon.id,
       name: salon.name,
-      url: `/salon/${encodedId}`
+      url: `/salon/${salon.id}`
     });
-    router.push(`/salon/${encodedId}`);
+    router.push(`/salon/${salon.id}`);
   };
 
   if (authLoading) {
