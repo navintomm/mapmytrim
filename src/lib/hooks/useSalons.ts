@@ -47,5 +47,16 @@ export const useSalons = (userLocation?: { lat: number; lng: number }) => {
     fetchSalons();
   }, [userLocation]);
 
+  // Log salons when they change
+  useEffect(() => {
+    if (salons.length > 0) {
+      console.log('📊 Salons loaded:', salons.map(s => ({
+        id: s.id,
+        name: s.name,
+        distance: s.distance
+      })));
+    }
+  }, [salons]);
+
   return { salons, loading, error };
 };
