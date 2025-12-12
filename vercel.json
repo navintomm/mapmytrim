@@ -6,12 +6,6 @@
     "regions": [
         "bom1"
     ],
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/"
-        }
-    ],
     "headers": [
         {
             "source": "/(.*)",
