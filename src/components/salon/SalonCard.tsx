@@ -108,7 +108,13 @@ export const SalonCard: React.FC<SalonCardProps> = ({ salon, onClick }) => {
 
         {/* CTA Button */}
         <div className="pt-5 border-t-2 border-gray-200/50">
-          <button className="w-full py-4 rounded-2xl font-extrabold text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-lg flex items-center justify-center gap-3 group"
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('🔘 Button clicked directly');
+              onClick();
+            }}
+            className="w-full py-4 rounded-2xl font-extrabold text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-lg flex items-center justify-center gap-3 group"
             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
             <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">✂️</span>
             <span>{salon.acceptsBookings !== false ? 'View Details & Book Now' : 'View Details'}</span>
