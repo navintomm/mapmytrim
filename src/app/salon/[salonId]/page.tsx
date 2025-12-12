@@ -21,6 +21,13 @@ export default function SalonDetailPage() {
   const params = useParams();
   const router = useRouter();
   const salonId = decodeURIComponent(params.salonId as string);
+
+  console.log('📍 Salon Details Page loaded:', {
+    rawParam: params.salonId,
+    decodedId: salonId,
+    allParams: params
+  });
+
   const { user } = useAuth();
   const { salon, loading: salonLoading } = useSalon(salonId);
   const { queue, loading: queueLoading } = useQueue(salonId);

@@ -31,7 +31,14 @@ export default function HomePage() {
   }, [user, authLoading, router]);
 
   const handleSalonClick = (salon: Salon) => {
-    router.push(`/salon/${salon.id}`);
+    const encodedId = encodeURIComponent(salon.id);
+    console.log('🔍 Navigating to salon:', {
+      originalId: salon.id,
+      encodedId,
+      name: salon.name,
+      url: `/salon/${encodedId}`
+    });
+    router.push(`/salon/${encodedId}`);
   };
 
   if (authLoading) {
@@ -91,8 +98,8 @@ export default function HomePage() {
             <button
               onClick={() => setViewMode('list')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${viewMode === 'list'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
                 }`}
             >
               📋 List View
@@ -100,8 +107,8 @@ export default function HomePage() {
             <button
               onClick={() => setViewMode('map')}
               className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${viewMode === 'map'
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
+                : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
                 }`}
             >
               🗺️ Map View
