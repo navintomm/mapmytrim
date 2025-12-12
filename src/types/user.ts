@@ -3,6 +3,7 @@ export interface User {
   name: string;
   phone: string;
   email: string;
+  role: 'customer' | 'owner' | 'admin';
   activeCheckIn?: ActiveCheckIn;
   createdAt: Date;
 }

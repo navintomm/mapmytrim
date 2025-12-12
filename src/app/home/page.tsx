@@ -34,7 +34,7 @@ export default function HomePage() {
     router.push(`/salon/${salon.id}`);
   };
 
-  if (authLoading || locationLoading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         <div className="text-center">
@@ -72,8 +72,8 @@ export default function HomePage() {
               >
                 👤 Profile
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={signOut}
                 className="hover:scale-105 transition-transform"
               >
@@ -90,21 +90,19 @@ export default function HomePage() {
           <div className="flex justify-center gap-3">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                viewMode === 'list'
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${viewMode === 'list'
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
                   : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
-              }`}
+                }`}
             >
               📋 List View
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                viewMode === 'map'
+              className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${viewMode === 'map'
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
                   : 'bg-white text-gray-600 hover:bg-gray-50 shadow'
-              }`}
+                }`}
             >
               🗺️ Map View
             </button>
@@ -141,7 +139,7 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-              
+
               {salons.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
                   <div className="text-6xl mb-4">🔍</div>

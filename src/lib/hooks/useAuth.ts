@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { onAuthChange, signOut as firebaseSignOut } from '@/lib/firebase/auth';
-import { getUser } from '@/lib/firebase/firestore';
+import { subscribeUser } from '@/lib/firebase/firestore';
 import type { User } from '@/types/user';
 
 export const useAuth = () => {
@@ -12,23 +12,47 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (fbUser) => {
+    // 1. Check local storage for cached user for instant load
+    const cachedUser = localStorage.getItem('mapmytrim_user');
+    if (cachedUser) {
+      setUser(JSON.parse(cachedUser));
+      setLoading(false);
+    }
+
+    let unsubscribeUser: () => void;
+
+    const unsubscribeAuth = onAuthChange(async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        const userData = await getUser(fbUser.uid);
-        setUser(userData);
+        // Subscribe to user document changes
+        unsubscribeUser = subscribeUser(fbUser.uid, (userData) => {
+          if (userData) {
+            setUser(userData);
+            localStorage.setItem('mapmytrim_user', JSON.stringify(userData));
+          } else {
+            // User authenticated but no profile doc? (Shouldn't happen with updated race fix but safety)
+            localStorage.removeItem('mapmytrim_user');
+          }
+          setLoading(false);
+        });
       } else {
         setUser(null);
+        localStorage.removeItem('mapmytrim_user');
+        setLoading(false);
+        if (unsubscribeUser) unsubscribeUser();
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUser) unsubscribeUser();
+    };
   }, []);
 
   const signOut = async () => {
     await firebaseSignOut();
     setUser(null);
+    localStorage.removeItem('mapmytrim_user');
     setFirebaseUser(null);
   };
 

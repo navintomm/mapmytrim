@@ -3,16 +3,13 @@ import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 
-export { createCheckIn } from './checkIn';
 export { checkoutCustomer } from './checkout';
 export { toggleStylistDuty } from './stylistDuty';
 export { adjustSalonQueue } from './queueManagement';
 export { submitSalonRating } from './rating';
 export { autoCheckoutWorker } from './autoCheckout';
-
-// firebase/functions/src/checkIn.ts
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
+export { onAppointmentCreate } from './triggers/emailTriggers';
+export { onFeedbackCreate } from './triggers/feedbackTriggers';
 
 const db = admin.firestore();
 const COOLDOWN_SECONDS = 20;

@@ -1,0 +1,30 @@
+export const subscribeToUserAppointments = (
+  userId: string,
+  callback: (appointments: Appointment[]) => void
+) => {
+  const appointmentsRef = collection(db, 'appointments');
+  const q = query(
+    appointmentsRef,
+    where('userId', '==', userId)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const appointments = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Appointment[];
+    
+    // Sort client-side
+    const sorted = appointments
+      .filter(apt => 
+        apt.status === 'booked' || apt.status === 'completed' || apt.status === 'cancelled'
+      )
+      .sort((a, b) => {
+        const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
+        const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+      
+    callback(sorted);
+  });
+};

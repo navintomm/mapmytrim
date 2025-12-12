@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDateTime } from '@/lib/utils/time';
-import { updateUser } from '@/lib/firebase/firestore';
+import { updateUser, getUserAppointments, cancelAppointment } from '@/lib/firebase/firestore';
+import type { Appointment } from '@/types';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function ProfilePage() {
     name: user?.name || '',
     phone: user?.phone || '',
   });
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
 
   const handleSave = async () => {
     if (!user) return;
@@ -31,6 +34,36 @@ export default function ProfilePage() {
       console.error('Failed to update profile:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Subscribe to user appointments
+  React.useEffect(() => {
+    if (user) {
+      import('@/lib/firebase/firestore').then(({ subscribeToUserAppointments }) => {
+        const unsubscribe = subscribeToUserAppointments(user.id, (data) => {
+          setAppointments(data);
+          setLoadingAppointments(false);
+        });
+        return () => unsubscribe();
+      }).catch(err => {
+        console.error('Error importing firestore:', err);
+        setLoadingAppointments(false);
+      });
+    }
+  }, [user]);
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+
+    try {
+      await cancelAppointment(appointmentId);
+      // Refresh appointments
+      const updated = await getUserAppointments(user!.id);
+      setAppointments(updated);
+    } catch (error) {
+      console.error('Failed to cancel appointment:', error);
+      alert('Failed to cancel appointment');
     }
   };
 
@@ -130,7 +163,126 @@ export default function ProfilePage() {
           )}
         </Card>
 
-        {/* Active Check-in */}
+        {/* My Appointments */}
+        <Card>
+          <h2 className="text-xl font-bold mb-4">My Appointments</h2>
+          {loadingAppointments ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : appointments.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No appointments yet. Book your first appointment!
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {/* Upcoming Appointments */}
+              {appointments.filter(a => a.status === 'booked').length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    📅 Upcoming
+                  </h3>
+                  <div className="space-y-3">
+                    {appointments
+                      .filter(a => a.status === 'booked')
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900 mb-1">{appointment.serviceName}</h4>
+                              <p className="text-sm text-gray-600 mb-2">
+                                📍 Salon ID: {appointment.salonId}
+                              </p>
+                              <div className="flex items-center gap-4 text-sm">
+                                <span className="flex items-center gap-1">
+                                  📅 {appointment.date}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  🕐 {appointment.time}
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCancelAppointment(appointment.id)}
+                              className="text-red-600 hover:bg-red-50"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Past Appointments */}
+              {appointments.filter(a => a.status === 'completed').length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    ✅ Past Appointments
+                  </h3>
+                  <div className="space-y-3">
+                    {appointments
+                      .filter(a => a.status === 'completed')
+                      .slice(0, 5)
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold text-gray-800">{appointment.serviceName}</h4>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                <span>📅 {appointment.date}</span>
+                                <span>🕐 {appointment.time}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                              Completed
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancelled Appointments */}
+              {appointments.filter(a => a.status === 'cancelled').length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    ❌ Cancelled
+                  </h3>
+                  <div className="space-y-3">
+                    {appointments
+                      .filter(a => a.status === 'cancelled')
+                      .slice(0, 3)
+                      .map((appointment) => (
+                        <div key={appointment.id} className="border border-red-100 rounded-lg p-4 bg-red-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-semibold text-gray-800">{appointment.serviceName}</h4>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                <span>📅 {appointment.date}</span>
+                                <span>🕐 {appointment.time}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs bg-red-200 text-red-700 px-2 py-1 rounded-full">
+                              Cancelled
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+
+        {/* Remove or update Active Check-in section */}
+        {/* Commenting out as check-in was removed */}
+        {/*
         {user.activeCheckIn && (
           <Card>
             <h2 className="text-xl font-bold mb-4">Active Check-in</h2>
@@ -147,14 +299,9 @@ export default function ProfilePage() {
             </div>
           </Card>
         )}
+        */}
 
-        {/* Visit History Placeholder */}
-        <Card>
-          <h2 className="text-xl font-bold mb-4">Visit History</h2>
-          <p className="text-gray-500 text-center py-8">
-            Your visit history will appear here
-          </p>
-        </Card>
+
       </main>
     </div>
   );

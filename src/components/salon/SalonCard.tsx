@@ -1,6 +1,5 @@
 import React from 'react';
 import { MapPin } from 'lucide-react';
-import { Card } from '../ui/Card';
 import { formatDistance } from '@/lib/utils/distance';
 import { formatWaitTime } from '@/lib/utils/time';
 import type { Salon } from '@/types/salon';
@@ -61,29 +60,33 @@ export const SalonCard: React.FC<SalonCardProps> = ({ salon, onClick }) => {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl p-4 text-center transform hover:scale-105 transition-all duration-300 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' }}>
-            <div className="absolute top-0 right-0 text-6xl opacity-10 transform translate-x-4 -translate-y-2">👥</div>
-            <div className="relative z-10">
-              <div className="text-3xl mb-1">👥</div>
-              <p className="text-xs text-gray-700 font-semibold mb-1">Queue</p>
-              <p className="text-3xl font-black text-gray-900">{salon.queueCount || 0}</p>
-              <p className="text-xs text-gray-600 mt-1">waiting</p>
-            </div>
-          </div>
+          {salon.acceptsBookings !== false && (
+            <>
+              <div className="relative overflow-hidden rounded-2xl p-4 text-center transform hover:scale-105 transition-all duration-300 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' }}>
+                <div className="absolute top-0 right-0 text-6xl opacity-10 transform translate-x-4 -translate-y-2">👥</div>
+                <div className="relative z-10">
+                  <div className="text-3xl mb-1">👥</div>
+                  <p className="text-xs text-gray-700 font-semibold mb-1">Queue</p>
+                  <p className="text-3xl font-black text-gray-900">{salon.queueCount || 0}</p>
+                  <p className="text-xs text-gray-600 mt-1">waiting</p>
+                </div>
+              </div>
 
-          <div className="relative overflow-hidden rounded-2xl p-4 text-center transform hover:scale-105 transition-all duration-300 shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #c3cfe2 0%, #c3cfe2 100%)' }}>
-            <div className="absolute top-0 right-0 text-6xl opacity-10 transform translate-x-4 -translate-y-2">⏱️</div>
-            <div className="relative z-10">
-              <div className="text-3xl mb-1">⏱️</div>
-              <p className="text-xs text-gray-700 font-semibold mb-1">Wait</p>
-              <p className="text-2xl font-black text-gray-900">
-                {formatWaitTime(estimatedWait)}
-              </p>
-              <p className="text-xs text-gray-600 mt-1">estimated</p>
-            </div>
-          </div>
+              <div className="relative overflow-hidden rounded-2xl p-4 text-center transform hover:scale-105 transition-all duration-300 shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #c3cfe2 0%, #c3cfe2 100%)' }}>
+                <div className="absolute top-0 right-0 text-6xl opacity-10 transform translate-x-4 -translate-y-2">⏱️</div>
+                <div className="relative z-10">
+                  <div className="text-3xl mb-1">⏱️</div>
+                  <p className="text-xs text-gray-700 font-semibold mb-1">Wait</p>
+                  <p className="text-2xl font-black text-gray-900">
+                    {formatWaitTime(estimatedWait)}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">estimated</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Status Badge */}
@@ -108,7 +111,7 @@ export const SalonCard: React.FC<SalonCardProps> = ({ salon, onClick }) => {
           <button className="w-full py-4 rounded-2xl font-extrabold text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-lg flex items-center justify-center gap-3 group"
             style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
             <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">✂️</span>
-            <span>View Details & Book Now</span>
+            <span>{salon.acceptsBookings !== false ? 'View Details & Book Now' : 'View Details'}</span>
             <span className="text-2xl group-hover:translate-x-2 transition-transform duration-300">→</span>
           </button>
         </div>

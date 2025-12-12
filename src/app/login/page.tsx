@@ -4,27 +4,35 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth';
+import Image from 'next/image';
 import { createUser } from '@/lib/firebase/firestore';
 import { Mail, Lock, User, Phone, ArrowRight, Scissors } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading } = useAuth();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
+    role: 'customer' as 'customer' | 'owner',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Quick check: If already logged in, redirect immediately
   useEffect(() => {
-    if (!loading && user) {
-      router.push('/home');
+    const cached = localStorage.getItem('mapmytrim_user');
+    if (cached) {
+      try {
+        const user = JSON.parse(cached);
+        router.push(user.role === 'owner' ? '/salon/dashboard' : '/home');
+      } catch (e) {
+        localStorage.removeItem('mapmytrim_user');
+      }
     }
-  }, [user, loading, router]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,31 +41,86 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signup') {
+        console.log('🚀 Starting signup process...', {
+          email: formData.email,
+          role: formData.role,
+          name: formData.name,
+        });
+
+        // Step 1: Create Firebase Auth account
+        console.log('📧 Creating Firebase Auth account...');
         const result = await signUpWithEmail(formData.email, formData.password);
+        console.log('✅ Firebase Auth account created:', result.user.uid);
+
+        // Step 2: Create Firestore user document
+        console.log('📝 Creating Firestore user document...');
         await createUser(result.user.uid, {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          role: formData.role,
           createdAt: new Date(),
         });
+        console.log('✅ Firestore user document created');
+
+        // Step 3: Store in localStorage for quick access
+        const userData = {
+          id: result.user.uid,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+        };
+        localStorage.setItem('mapmytrim_user', JSON.stringify(userData));
+        console.log('✅ User data cached in localStorage');
+
+        // Step 4: Redirect based on role
+        const redirectPath = formData.role === 'owner' ? '/salon/dashboard' : '/home';
+        console.log('🔄 Redirecting to:', redirectPath);
+        router.push(redirectPath);
       } else {
+        console.log('🔐 Starting login process...', { email: formData.email });
+
         await signInWithEmail(formData.email, formData.password);
+        console.log('✅ Login successful');
+
+        // For login, wait for auth state to update localStorage
+        setTimeout(() => {
+          const cached = localStorage.getItem('mapmytrim_user');
+          if (cached) {
+            const user = JSON.parse(cached);
+            const redirectPath = user.role === 'owner' ? '/salon/dashboard' : '/home';
+            console.log('🔄 Redirecting to:', redirectPath);
+            router.push(redirectPath);
+          } else {
+            console.warn('⚠️ No cached user found after login');
+          }
+        }, 1000); // Increased timeout to 1 second
       }
-      router.push('/home');
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      console.error('❌ Authentication error:', err);
+      console.error('Error code:', err.code);
+      console.error('Error message:', err.message);
+
+      // Display user-friendly error messages
+      let errorMessage = 'Authentication failed';
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please login instead.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (err.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-pink-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-500 p-4">
@@ -75,8 +138,14 @@ export default function LoginPage() {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 text-white mb-4 shadow-lg transform hover:scale-110 transition-transform duration-300">
-              <Scissors size={32} />
+            <div className="relative w-28 h-28 mx-auto mb-6 rounded-full bg-white p-1 shadow-xl transform hover:scale-105 transition-transform duration-300 overflow-hidden border-4 border-white/30 backdrop-blur-sm">
+              <Image
+                src="/images/logo.jpg"
+                alt="MapMyTrim Logo"
+                fill
+                className="object-cover"
+                priority
+              />
             </div>
             <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-pink-100 mb-2 drop-shadow-sm">
               MapMyTrim
@@ -112,6 +181,22 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'signup' && (
               <>
+                <div className="flex gap-2 mb-4">
+                  {['customer', 'owner'].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: r as 'customer' | 'owner' })}
+                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-bold border ${formData.role === r
+                        ? 'bg-white text-purple-600 border-white'
+                        : 'bg-transparent text-white/70 border-white/30 hover:border-white/60'
+                        } transition-all`}
+                    >
+                      {r === 'customer' ? 'Customer' : 'Salon Owner'}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/60 group-focus-within:text-white transition-colors">
                     <User size={20} />
@@ -121,7 +206,7 @@ export default function LoginPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="block w-full px-12 py-3.5 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:bg-white/20 transition-all duration-300 text-center"
-                    placeholder="Full Name"
+                    placeholder={formData.role === 'owner' ? "Business Name" : "Full Name"}
                     required
                   />
                 </div>

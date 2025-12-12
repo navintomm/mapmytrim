@@ -1,0 +1,1 @@
+{"version":3,"file":"email.js","sourceRoot":"","sources":["../../src/config/email.ts"],"names":[],"mappings":";;;AAAa,QAAA,WAAW,GAAG;IACvB,OAAO,EAAE,OAAO;IAChB,IAAI,EAAE;QACF,IAAI,EAAE,qBAAqB;QAC3B,IAAI,EAAE,kBAAkB,EAAE,gCAAgC;KAC7D;IACD,IAAI,EAAE,iCAAiC;CAC1C,CAAC"}

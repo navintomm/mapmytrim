@@ -28,7 +28,18 @@ export const useGeolocation = () => {
       return;
     }
 
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setLocation({
+        latitude: null,
+        longitude: null,
+        error: 'Location request timed out',
+        loading: false,
+      });
+    }, 5000); // 5 second timeout
+
     const success = (position: GeolocationPosition) => {
+      clearTimeout(timeoutId);
       setLocation({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -38,6 +49,7 @@ export const useGeolocation = () => {
     };
 
     const error = () => {
+      clearTimeout(timeoutId);
       setLocation({
         latitude: null,
         longitude: null,
@@ -46,7 +58,13 @@ export const useGeolocation = () => {
       });
     };
 
-    navigator.geolocation.getCurrentPosition(success, error);
+    navigator.geolocation.getCurrentPosition(success, error, {
+      timeout: 5000, // 5 second timeout
+      maximumAge: 300000, // Accept cached position up to 5 minutes old
+      enableHighAccuracy: false, // Faster, less accurate
+    });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   return location;

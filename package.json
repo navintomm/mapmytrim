@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
+    "@emailjs/browser": "^4.4.1",
     "@googlemaps/js-api-loader": "^1.16.6",
     "date-fns": "^3.6.0",
     "firebase": "^10.11.0",

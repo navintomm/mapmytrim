@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Alert } from '@/components/ui/Alert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { BookingModal } from '@/components/salon/BookingModal';
+import { FeedbackModal } from '@/components/feedback/FeedbackModal';
 import { createCheckIn, checkoutCustomer } from '@/lib/firebase/functions';
 import { extractErrorCode, getErrorMessage } from '@/lib/utils/errors';
 
@@ -45,9 +47,23 @@ export default function SalonDetailPage() {
     }
   }, [salonId]);
 
+  // Fetch services
+  React.useEffect(() => {
+    if (salonId) {
+      import('@/lib/firebase/firestore').then(({ getServices }) => {
+        getServices(salonId).then((data) => {
+          setServices(data || []);
+        }).catch(err => console.error('Error fetching services:', err));
+      });
+    }
+  }, [salonId]);
+
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
   const [showRating, setShowRating] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [services, setServices] = React.useState<any[]>([]);
 
   const userInQueue = user?.activeCheckIn?.shopId === salonId;
 
@@ -61,7 +77,7 @@ export default function SalonDetailPage() {
       const errorCode = extractErrorCode(err);
       const errorMessage = errorCode
         ? getErrorMessage(errorCode)
-        : 'Failed to check in';
+        : err.message || 'Failed to check in';
       setError(errorMessage);
     } finally {
       setChecking(false);
@@ -126,35 +142,29 @@ export default function SalonDetailPage() {
 
         <SalonDetails salon={salon} stylists={stylists} />
 
-        {/* Check-in/out Button */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {userInQueue ? (
-            <div className="space-y-4">
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <p className="text-green-700 font-semibold text-lg">
-                  ✓ You are checked in
-                </p>
-              </div>
-              <Button
-                onClick={handleCheckOut}
-                loading={checking}
-                variant="danger"
-                className="w-full"
-                size="lg"
-              >
-                Check Out
-              </Button>
-            </div>
-          ) : (
+        {/* Book Appointment Button */}
+        {salon.acceptsAppointments && (
+          <div className="bg-white rounded-lg shadow-md p-6">
             <Button
-              onClick={handleCheckIn}
-              loading={checking}
+              onClick={() => setShowBookingModal(true)}
               className="w-full"
               size="lg"
             >
-              Check In to Queue
+              📅 Book Appointment
             </Button>
-          )}
+          </div>
+        )}
+
+        {/* Feedback Button */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <Button
+            onClick={() => setShowFeedbackModal(true)}
+            variant="secondary"
+            className="w-full"
+            size="lg"
+          >
+            💬 Send Feedback
+          </Button>
         </div>
 
         {queueLoading ? (
@@ -184,6 +194,27 @@ export default function SalonDetailPage() {
           }}
         />
       </Modal>
+
+      {/* Booking Modal */}
+      {user && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          salonId={salonId}
+          salonName={salon.name}
+          services={services}
+          userId={user.id}
+          userName={user.name || user.email || 'Guest'}
+        />
+      )}
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        salonId={salonId}
+        salonName={salon.name}
+      />
     </div>
   );
 }
