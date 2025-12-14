@@ -358,7 +358,6 @@ export const subscribeAppointments = (
   const q = query(
     appointmentsRef,
     where('salonId', '==', salonId),
-    where('status', '==', 'booked'),
     orderBy('date'),
     orderBy('time')
   );

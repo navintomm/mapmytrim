@@ -21,10 +21,7 @@ import {
     deleteService,
     updateAppointment,
     cancelAppointment,
-    updateUserLoyaltyPoints,
-    addStylist,
-    updateStylist,
-    deleteStylist
+    updateUserLoyaltyPoints
 } from '@/lib/firebase/firestore';
 import { signOut } from '@/lib/firebase/auth';
 import type { Salon, QueueItem, Stylist, Service, Appointment, Feedback } from '@/types';
@@ -716,8 +713,8 @@ export default function SalonDashboardPage() {
 
                                     {/* Appointments List */}
                                     <div className="space-y-3">
-                                        {appointments.length > 0 ? (
-                                            appointments.map((appointment) => (
+                                        {appointments.filter(a => a.status === 'booked').length > 0 ? (
+                                            appointments.filter(a => a.status === 'booked').map((appointment) => (
                                                 <div key={appointment.id} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
