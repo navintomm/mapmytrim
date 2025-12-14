@@ -25,7 +25,7 @@ import {
 } from '@/lib/firebase/firestore';
 import { signOut } from '@/lib/firebase/auth';
 import type { Salon, QueueItem, Stylist, Service, Appointment, Feedback } from '@/types';
-import { Users, Clock, TrendingUp, UserCheck, Play, Pause, Hash, LogOut, Plus, Trash2, Scissors, DollarSign, Calendar, X, Settings, Check, XCircle, MessageSquare } from 'lucide-react';
+import { Users, Clock, TrendingUp, UserCheck, Play, Pause, Hash, LogOut, Plus, Trash2, Scissors, DollarSign, Calendar, X, Settings, Check, XCircle, MessageSquare, UserPlus } from 'lucide-react';
 import {
     LineChart,
     Line,
@@ -804,14 +804,14 @@ export default function SalonDashboardPage() {
                                     <form onSubmit={handleAddStylist} className="flex gap-4 mb-8">
                                         <input
                                             type="text"
-                                            value={newStylistName}
-                                            onChange={(e) => setNewStylistName(e.target.value)}
+                                            value={newStylist.name}
+                                            onChange={(e) => setNewStylist(prev => ({ ...prev, name: e.target.value }))}
                                             placeholder="Enter Stylist Name"
                                             className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                         />
                                         <button
                                             type="submit"
-                                            disabled={!newStylistName.trim() || isAddingStylist}
+                                            disabled={!newStylist.name.trim() || isAddingStylist}
                                             className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                                         >
                                             <Plus size={20} /> Add
