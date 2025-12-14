@@ -30,21 +30,6 @@ interface SalonMapProps {
   onSalonClick: (salon: Salon) => void;
 }
 
-const DefaultIcon = (() => {
-  if (typeof window === 'undefined') return null;
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const L = require('leaflet');
-  return L.icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  });
-})();
-
 export const SalonMap: React.FC<SalonMapProps> = ({
   salons,
   userLocation,
@@ -54,6 +39,20 @@ export const SalonMap: React.FC<SalonMapProps> = ({
 
   useEffect(() => {
     setIsMounted(true);
+    // Fix Leaflet's default icon paths which are broken in Webpack
+    (async () => {
+      const L = (await import('leaflet')).default;
+      const DefaultIcon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      L.Marker.prototype.options.icon = DefaultIcon;
+    })();
   }, []);
 
   const center: [number, number] = userLocation
@@ -84,8 +83,8 @@ export const SalonMap: React.FC<SalonMapProps> = ({
         />
 
         {/* User Location Marker (if available) */}
-        {userLocation && DefaultIcon && (
-          <Marker position={[userLocation.lat, userLocation.lng]} icon={DefaultIcon}>
+        {userLocation && (
+          <Marker position={[userLocation.lat, userLocation.lng]}>
             <Popup>You are here</Popup>
           </Marker>
         )}
@@ -94,11 +93,11 @@ export const SalonMap: React.FC<SalonMapProps> = ({
         {salons.map((salon) => {
           if (!salon.geoLocation) return null;
 
-          return DefaultIcon ? (
+          return (
             <Marker
               key={salon.id}
               position={[salon.geoLocation.latitude, salon.geoLocation.longitude]}
-              icon={DefaultIcon}
+
             >
               <Popup>
                 <div className="min-w-[150px]">
@@ -114,7 +113,7 @@ export const SalonMap: React.FC<SalonMapProps> = ({
                 </div>
               </Popup>
             </Marker>
-          ) : null;
+          );
         })}
       </MapContainer>
     </div>
