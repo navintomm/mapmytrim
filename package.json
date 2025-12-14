@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "firebase:emulators": "firebase emulators:start",
-    "firebase:deploy": "firebase deploy"
+    "firebase:deploy": "firebase deploy",
+    "deploy": "vercel --prod",
+    "vercel-login": "vercel login"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
