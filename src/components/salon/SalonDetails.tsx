@@ -2,6 +2,12 @@ import React from 'react';
 import type { Salon } from '@/types/salon';
 import { formatWaitTime } from '@/lib/utils/time';
 import { Clock, Users, Scissors, MapPin, Phone, User as UserIcon } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const SalonMap = dynamic(() => import('@/components/ui/Map'), {
+  ssr: false,
+  loading: () => <div className="h-64 w-full bg-gray-100 animate-pulse rounded-xl flex items-center justify-center text-gray-400">Loading Map...</div>
+});
 
 interface SalonDetailsProps {
   salon: Salon;
@@ -79,6 +85,34 @@ export const SalonDetails: React.FC<SalonDetailsProps> = ({ salon, stylists = []
             </>
           )}
         </div>
+
+        {/* Map Section */}
+        {salon.geoLocation && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <MapPin size={20} className="text-gray-400" />
+                Location
+              </h3>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${salon.geoLocation.latitude},${salon.geoLocation.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm hover:shadow-md"
+              >
+                <MapPin size={16} />
+                Get Directions
+              </a>
+            </div>
+            <div className="h-64 w-full rounded-xl overflow-hidden border border-gray-200 shadow-inner bg-gray-50">
+              <SalonMap
+                latitude={salon.geoLocation.latitude}
+                longitude={salon.geoLocation.longitude}
+                address={salon.address}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Stylists Info - Only show if shop is OPEN (onDutyCount > 0) */}
         {salon.onDutyCount > 0 ? (

@@ -10,6 +10,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDateTime } from '@/lib/utils/time';
 import { updateUser, getUserAppointments, cancelAppointment } from '@/lib/firebase/firestore';
 import type { Appointment } from '@/types';
+import emailjs from '@emailjs/browser';
+import { emailJSConfig } from '@/config/emailjs';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -58,6 +60,35 @@ export default function ProfilePage() {
 
     try {
       await cancelAppointment(appointmentId);
+
+      // EMAIL NOTIFICATION
+      try {
+        // Find the appointment to get details (optimistic update happens after, so we might need to find it from state `appointments`)
+        const appt = appointments.find(a => a.id === appointmentId);
+        if (appt && emailJSConfig.templateId) {
+          await emailjs.send(
+            emailJSConfig.serviceId,
+            emailJSConfig.templateId,
+            {
+              to_email: user?.email, // Notify the user themselves
+              email_subject: `Appointment Cancelled 📅`,
+              email_title: 'Cancellation Confirmed',
+              email_body: `Your appointment at ${appt.salonName} has been cancelled as requested.`,
+
+              details_label_1: 'Salon',
+              details_value_1: appt.salonName,
+              details_label_2: 'Date',
+              details_value_2: appt.date,
+              details_label_3: 'Reason',
+              details_value_3: 'User requested cancellation',
+            },
+            emailJSConfig.publicKey
+          );
+          console.log('✅ Cancellation email sent');
+        }
+      } catch (e) {
+        console.error('Email failed', e);
+      }
       // Refresh appointments
       const updated = await getUserAppointments(user!.id);
       setAppointments(updated);

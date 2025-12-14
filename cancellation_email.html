@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Cancelled</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+
+    <!-- Main Container -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f5; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <!-- Content Card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="600"
+                    style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); max-width: 600px; width: 100%; border-top: 6px solid #ef4444;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 0 20px 0;">
+                            <h1 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 800;">Appointment Update
+                            </h1>
+                            <p
+                                style="margin: 10px 0 0 0; color: #ef4444; font-weight: 600; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">
+                                Cancelled</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px;">
+                            <p
+                                style="margin: 0 0 25px 0; color: #4b5563; font-size: 16px; line-height: 1.6; text-align: center;">
+                                Hi <strong>{{user_name}}</strong>, we hereby confirm that your appointment has been
+                                cancelled.
+                            </p>
+
+                            <!-- Details Box -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+                                <tr>
+                                    <td style="padding-bottom: 12px; border-bottom: 1px dashed #fecaca;">
+                                        <span
+                                            style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Salon</span><br>
+                                        <span
+                                            style="color: #1f2937; font-size: 16px; font-weight: 600;">{{salon_name}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px dashed #fecaca;">
+                                        <span
+                                            style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Service</span><br>
+                                        <span style="color: #1f2937; font-size: 16px;">{{service_name}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px 0; border-bottom: 1px dashed #fecaca;">
+                                        <span
+                                            style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Date
+                                            & Time</span><br>
+                                        <span style="color: #1f2937; font-size: 16px;">{{appointment_date}} at
+                                            {{appointment_time}}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top: 12px;">
+                                        <span
+                                            style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase;">Reason</span><br>
+                                        <span
+                                            style="color: #dc2626; font-size: 15px; font-style: italic;">"{{cancellation_reason}}"</span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p
+                                style="margin: 0 0 30px 0; color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center;">
+                                Plans change, and that's okay! When you're ready, we're here to help you get booked
+                                again.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <a href="http://localhost:3000/home" target="_blank"
+                                            style="display: inline-block; padding: 14px 32px; background-color: #374151; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; border-radius: 8px; transition: background-color 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                            Book New Appointment
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #f0f0f0;">
+                            <p
+                                style="margin: 0; color: #9ca3af; font-size: 13px; text-align: center; line-height: 1.5;">
+                                If you did not request this cancellation or believe this is an error, please contact the
+                                salon immediately.<br><br>
+                                © 2025 MapMyTrim.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Spacer -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td height="40"></td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

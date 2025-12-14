@@ -8,7 +8,7 @@ export { toggleStylistDuty } from './stylistDuty';
 export { adjustSalonQueue } from './queueManagement';
 export { submitSalonRating } from './rating';
 export { autoCheckoutWorker } from './autoCheckout';
-export { onAppointmentCreate } from './triggers/emailTriggers';
+export { onAppointmentCreate, onUserCreate, onAppointmentUpdate, replyToFeedback } from './triggers/emailTriggers';
 export { onFeedbackCreate } from './triggers/feedbackTriggers';
 
 const db = admin.firestore();

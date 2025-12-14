@@ -83,12 +83,17 @@ export function BookingModal({ isOpen, onClose, salonId, salonName, services, us
                         emailJSConfig.templateId,
                         {
                             to_email: userEmail,
-                            customer_name: userName,
-                            salon_name: salonName,
-                            appointment_date: selectedDate,
-                            appointment_time: selectedTime,
-                            service_name: selectedServices.map(s => s.name).join(', '),
-                            service_price: selectedServices.reduce((sum, s) => sum + s.price, 0).toString(),
+                            email_subject: `Booking Confirmed: ${salonName} 📅`,
+                            email_title: 'Appointment Confirmed',
+                            email_body: `Hi ${userName}, your appointment at ${salonName} has been successfully booked.`,
+
+                            // Details
+                            details_label_1: 'Service(s)',
+                            details_value_1: selectedServices.map(s => s.name).join(', '),
+                            details_label_2: 'Date & Time',
+                            details_value_2: `${selectedDate} at ${selectedTime}`,
+                            details_label_3: 'Total Price',
+                            details_value_3: `$${selectedServices.reduce((sum, s) => sum + s.price, 0)}`,
                         },
                         emailJSConfig.publicKey
                     );

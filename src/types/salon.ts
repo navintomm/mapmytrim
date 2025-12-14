@@ -26,6 +26,7 @@ export interface Salon {
   lastResetDate: string; // YYYY-MM-DD
   acceptsBookings?: boolean;
   acceptsAppointments?: boolean;
+  image?: string;
 }
 
 export interface GeoLocation {
@@ -60,4 +61,6 @@ export interface Appointment {
   time: string; // HH:MM
   status: 'booked' | 'completed' | 'cancelled';
   createdAt: any;
+  salonName?: string;
+  salonAddress?: string;
 }

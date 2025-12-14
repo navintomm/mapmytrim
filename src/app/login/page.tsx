@@ -7,6 +7,8 @@ import { signInWithEmail, signUpWithEmail } from '@/lib/firebase/auth';
 import Image from 'next/image';
 import { createUser } from '@/lib/firebase/firestore';
 import { Mail, Lock, User, Phone, ArrowRight, Scissors } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+import { emailJSConfig } from '@/config/emailjs';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,6 +75,32 @@ export default function LoginPage() {
         };
         localStorage.setItem('mapmytrim_user', JSON.stringify(userData));
         console.log('✅ User data cached in localStorage');
+
+        // Step 3.5: Send Welcome Email via EmailJS (Universal Template)
+        try {
+          console.log('📧 Sending welcome email...');
+          await emailjs.send(
+            emailJSConfig.serviceId,
+            emailJSConfig.templateId,
+            {
+              to_email: formData.email,
+              email_subject: 'Welcome to MapMyTrim! ✂️',
+              email_title: `Welcome, ${formData.name}!`,
+              email_body: `We are thrilled to have you on board. Discover top-rated salons, join queues remotely, and book appointments effortlessly.`,
+              // Optional details (can be empty if not needed)
+              details_label_1: 'Account Type',
+              details_value_1: formData.role === 'customer' ? 'Customer' : 'Salon Owner',
+              details_label_2: 'Date',
+              details_value_2: new Date().toLocaleDateString(),
+              details_label_3: '',
+              details_value_3: '',
+            },
+            emailJSConfig.publicKey
+          );
+          console.log('✅ Welcome email sent successfully!');
+        } catch (emailErr) {
+          console.error('⚠️ Failed to send welcome email (non-fatal):', emailErr);
+        }
 
         // Step 4: Redirect based on role
         const redirectPath = formData.role === 'owner' ? '/salon/dashboard' : '/home';

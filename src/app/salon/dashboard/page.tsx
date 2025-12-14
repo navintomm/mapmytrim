@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthContext } from '@/context/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import {
+
     getSalonByOwner,
     subscribeSalon,
     updateSalon,
@@ -12,6 +13,7 @@ import {
     subscribeStylists,
     subscribeServices,
     subscribeAppointments,
+    subscribeToSalonFeedback,
     addStylist,
     deleteStylist,
     updateStylist,
@@ -21,8 +23,8 @@ import {
     cancelAppointment
 } from '@/lib/firebase/firestore';
 import { signOut } from '@/lib/firebase/auth';
-import type { Salon, QueueItem, Stylist, Service, Appointment } from '@/types';
-import { Users, Clock, TrendingUp, UserCheck, Play, Pause, Hash, LogOut, Plus, Trash2, Scissors, DollarSign, Calendar, X, Settings, Check, XCircle } from 'lucide-react';
+import type { Salon, QueueItem, Stylist, Service, Appointment, Feedback } from '@/types';
+import { Users, Clock, TrendingUp, UserCheck, Play, Pause, Hash, LogOut, Plus, Trash2, Scissors, DollarSign, Calendar, X, Settings, Check, XCircle, MessageSquare } from 'lucide-react';
 import {
     LineChart,
     Line,
@@ -32,8 +34,10 @@ import {
     Tooltip,
     ResponsiveContainer
 } from 'recharts';
+import emailjs from '@emailjs/browser';
+import { emailJSConfig } from '@/config/emailjs';
 
-type DashboardView = 'queue' | 'analytics' | 'stylists' | 'services' | 'appointments' | 'settings';
+type DashboardView = 'queue' | 'analytics' | 'stylists' | 'services' | 'appointments' | 'settings' | 'feedback';
 
 export default function SalonDashboardPage() {
     const { user } = useAuthContext();
@@ -45,7 +49,10 @@ export default function SalonDashboardPage() {
     const [stylists, setStylists] = useState<Stylist[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [feedback, setFeedback] = useState<Feedback[]>([]);
     const [activeView, setActiveView] = useState<DashboardView>('queue');
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState('');
 
     // Stylist Form State
     const [newStylistName, setNewStylistName] = useState('');
@@ -88,6 +95,7 @@ export default function SalonDashboardPage() {
         let unsubscribeStylistsFunc: () => void;
         let unsubscribeServicesFunc: () => void;
         let unsubscribeAppointmentsFunc: () => void;
+        let unsubscribeFeedbackFunc: () => void;
 
         const fetchSalon = async () => {
             if (!user) return;
@@ -125,6 +133,11 @@ export default function SalonDashboardPage() {
                         setAppointments(items);
                     });
 
+                    // Subscribe Feedback
+                    unsubscribeFeedbackFunc = subscribeToSalonFeedback(salonData.id, (items) => {
+                        setFeedback(items);
+                    });
+
                 } else {
                     router.push('/salon/register');
                 }
@@ -143,6 +156,7 @@ export default function SalonDashboardPage() {
             if (unsubscribeStylistsFunc) unsubscribeStylistsFunc();
             if (unsubscribeServicesFunc) unsubscribeServicesFunc();
             if (unsubscribeAppointmentsFunc) unsubscribeAppointmentsFunc();
+            if (unsubscribeFeedbackFunc) unsubscribeFeedbackFunc();
         };
     }, [user, router]);
 
@@ -264,7 +278,14 @@ export default function SalonDashboardPage() {
                 {/* Sidebar */}
                 <aside className="w-full md:w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
                     <div className="p-6">
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center gap-2">
+                            <div className="w-8 h-8 relative rounded-lg overflow-hidden shadow-sm">
+                                <img
+                                    src="/images/logo.jpg"
+                                    alt="MapMyTrim Logo"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
                             MapMyTrim
                         </h1>
                         <p className="text-sm text-gray-500 mt-2 font-medium">Owner Dashboard</p>
@@ -299,6 +320,12 @@ export default function SalonDashboardPage() {
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeView === 'settings' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Settings size={20} /> Settings
+                        </button>
+                        <button
+                            onClick={() => setActiveView('feedback')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeView === 'feedback' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <MessageSquare size={20} /> Feedback
                         </button>
                         <button
                             onClick={() => setActiveView('analytics')}
@@ -606,6 +633,7 @@ export default function SalonDashboardPage() {
                                                                         if (confirm('Cancel this appointment?')) {
                                                                             try {
                                                                                 await cancelAppointment(appointment.id);
+                                                                                // Email notification would go here, but we lack user email in this view context
                                                                             } catch (error) {
                                                                                 console.error('Failed to cancel:', error);
                                                                             }
@@ -702,6 +730,122 @@ export default function SalonDashboardPage() {
                             </div>
                         )}
 
+                        {/* VIEW: FEEDBACK */}
+                        {activeView === 'feedback' && (
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                        <MessageSquare size={20} className="text-blue-500" /> Customer Feedback
+                                    </h3>
+
+                                    <div className="space-y-4">
+                                        {feedback.length > 0 ? (
+                                            feedback.map((item) => (
+                                                <div key={item.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${item.type === 'complaint' ? 'bg-red-100 text-red-700' :
+                                                                item.type === 'suggestion' ? 'bg-blue-100 text-blue-700' :
+                                                                    'bg-green-100 text-green-700'
+                                                                }`}>
+                                                                {item.type}
+                                                            </span>
+                                                            <span className="text-xs text-gray-400">
+                                                                {item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}
+                                                            </span>
+                                                        </div>
+                                                        {item.replySent ? (
+                                                            <span className="text-xs font-medium text-green-600 flex items-center gap-1">
+                                                                <Check size={12} /> Replied
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs font-medium text-orange-500">Pending Reply</span>
+                                                        )}
+                                                    </div>
+
+                                                    <h4 className="font-bold text-gray-900 mb-1">{item.subject}</h4>
+                                                    <p className="text-gray-600 text-sm mb-3 whitespace-pre-wrap">{item.message}</p>
+
+                                                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                                                        <div className="text-xs text-gray-500">
+                                                            From: <span className="font-medium text-gray-700">{item.userName}</span>
+                                                        </div>
+
+                                                        {!item.replySent && replyingTo !== item.id && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setReplyingTo(item.id);
+                                                                    setReplyText('');
+                                                                }}
+                                                                className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors"
+                                                            >
+                                                                Reply via Email
+                                                            </button>
+                                                        )}
+
+                                                        {replyingTo === item.id && (
+                                                            <div className="mt-4 p-3 bg-white rounded-lg border border-purple-100 animate-fadeIn w-full">
+                                                                <textarea
+                                                                    value={replyText}
+                                                                    onChange={(e) => setReplyText(e.target.value)}
+                                                                    className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none mb-2"
+                                                                    rows={3}
+                                                                    placeholder="Type your reply here..."
+                                                                    autoFocus
+                                                                />
+                                                                <div className="flex justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => setReplyingTo(null)}
+                                                                        className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            if (!replyText.trim()) return;
+
+                                                                            const feedbackId = item.id;
+                                                                            const message = replyText;
+
+                                                                            import('@/lib/firebase/functions').then(async ({ replyToFeedback }) => {
+                                                                                try {
+                                                                                    await replyToFeedback({ feedbackId, replyMessage: message });
+                                                                                    alert('Reply sent successfully!');
+                                                                                    setReplyingTo(null);
+                                                                                    // Ideally refresh data here
+                                                                                } catch (error) {
+                                                                                    console.error('Failed to reply:', error);
+                                                                                    alert('Failed to send reply. Please try again.');
+                                                                                }
+                                                                            });
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors"
+                                                                    >
+                                                                        Send Reply
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {item.replySent && item.replyMessage && (
+                                                        <div className="mt-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-sm">
+                                                            <p className="text-xs font-bold text-indigo-800 mb-1">Your Reply:</p>
+                                                            <p className="text-indigo-700">{item.replyMessage}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
+                                                <MessageSquare size={48} className="mx-auto mb-3 opacity-30" />
+                                                <p>No feedback received yet.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {/* VIEW: SETTINGS */}
                         {activeView === 'settings' && (
                             <div className="grid grid-cols-1 gap-6">
@@ -780,43 +924,10 @@ export default function SalonDashboardPage() {
                                                         console.error('Failed to update setting:', error);
                                                     }
                                                 }}
-                                                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
-                                                min="5"
-                                                max="120"
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">Used to calculate estimated wait times</p>
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* Salon Info */}
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Salon Information</h3>
-                                    <div className="space-y-3 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">Name:</span>
-                                            <span className="ml-2 font-semibold">{salon.name}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Address:</span>
-                                            <span className="ml-2 font-semibold">{salon.address}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Contact:</span>
-                                            <span className="ml-2 font-semibold">{salon.contact}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Chairs:</span>
-                                            <span className="ml-2 font-semibold">{salon.chairs}</span>
-                                        </div>
-                                        {salon.timings && (
-                                            <div>
-                                                <span className="text-gray-500">Hours:</span>
-                                                <span className="ml-2 font-semibold">{salon.timings.open} - {salon.timings.close}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-4">To update salon info, please contact support.</p>
                                 </div>
                             </div>
                         )}

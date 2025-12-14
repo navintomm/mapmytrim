@@ -15,4 +15,7 @@ export interface Feedback {
     createdAt: any; // Firestore Timestamp
     emailSentAt?: any; // Firestore Timestamp
     resolvedAt?: any; // Firestore Timestamp
+    replySent?: boolean;
+    replyMessage?: string;
+    repliedAt?: any; // Timestamp
 }

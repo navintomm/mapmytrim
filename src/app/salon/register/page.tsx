@@ -6,7 +6,12 @@ import { useAuthContext } from '@/context/AuthContext';
 import { AuthGuard } from '@/components/AuthGuard';
 import { registerSalon } from '@/lib/firebase/firestore';
 import { MapPin, Scissors, Clock, CheckCircle } from 'lucide-react';
-// import { generateImage } from '@/lib/utils'; // Placeholder for future usage
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(() => import('@/components/maps/LocationPicker'), {
+    ssr: false,
+    loading: () => <div className="h-64 w-full bg-gray-100 animate-pulse rounded-xl flex items-center justify-center text-gray-400">Loading Map...</div>
+});
 
 export default function SalonRegisterPage() {
     const { user } = useAuthContext();
@@ -212,6 +217,16 @@ export default function SalonRegisterPage() {
                                             placeholder="Shop No, Street, Area, City..."
                                         />
                                     </div>
+
+                                    {/* Map Picker */}
+                                    <div className="border border-purple-100 rounded-xl p-4 bg-purple-50/50">
+                                        <LocationPicker
+                                            initialLat={parseFloat(formData.latitude) || undefined}
+                                            initialLng={parseFloat(formData.longitude) || undefined}
+                                            onLocationSelect={(lat: number, lng: number) => setFormData({ ...formData, latitude: lat.toString(), longitude: lng.toString() })}
+                                        />
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Latitude</label>
@@ -235,7 +250,7 @@ export default function SalonRegisterPage() {
                                         </div>
                                     </div>
                                     <p className="text-xs text-gray-500">
-                                        * You can get these from Google Maps by right-clicking a location.
+                                        * You can set location by clicking on the map OR typing coordinates manually.
                                     </p>
                                 </div>
                             )}

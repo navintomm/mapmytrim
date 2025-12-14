@@ -6,3 +6,4 @@ export const checkoutCustomer = httpsCallable(functions, 'checkoutCustomer');
 export const toggleStylistDuty = httpsCallable(functions, 'toggleStylistDuty');
 export const adjustSalonQueue = httpsCallable(functions, 'adjustSalonQueue');
 export const submitSalonRating = httpsCallable(functions, 'submitSalonRating');
+export const replyToFeedback = httpsCallable(functions, 'replyToFeedback');

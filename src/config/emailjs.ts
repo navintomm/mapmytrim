@@ -2,9 +2,10 @@
 // Get credentials from https://www.emailjs.com/
 
 export const emailJSConfig = {
-    serviceId: 'service_ib13wcl',      // ✅ Service ID (corrected)
-    templateId: 'template_27cfqge',    // ✅ Template ID
-    publicKey: 'lExvCwporAyBvXGyA',    // ✅ Public Key
+    serviceId: 'service_ib13wcl',
+    // Universal Template ID (Handles Welcome, Booking, Cancellation)
+    templateId: 'template_27cfqge',
+    publicKey: 'lExvCwporAyBvXGyA',
 };
 
 // Template variables to use in EmailJS dashboard:
