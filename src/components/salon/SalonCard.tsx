@@ -27,9 +27,9 @@ export const SalonCard: React.FC<SalonCardProps> = ({ salon, onClick }) => {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-xl transform group-hover:rotate-12 group-hover:scale-110 transition-all duration-300 overflow-hidden relative"
                 style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                {salon.image || salon.name.toLowerCase().includes('top') || salon.name.toLowerCase().includes('mapmytrim') ? (
+                {salon.logo || salon.image || salon.name.toLowerCase().includes('top') || salon.name.toLowerCase().includes('mapmytrim') ? (
                   <img
-                    src={salon.image || "/images/logo.jpg"}
+                    src={salon.logo || salon.image || "/images/logo.jpg"}
                     alt={salon.name}
                     className="w-full h-full object-cover"
                   />

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { User, MapPin, Calendar, LogOut, Star, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -192,6 +193,31 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </Card>
+
+        {/* Loyalty Card */}
+        <Card className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-0 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <text className="text-9xl font-black">★</text>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2 opacity-90">
+              <span className="bg-white/20 p-1.5 rounded-lg"><Star size={16} className="text-yellow-300 fill-yellow-300" /></span>
+              <span className="font-bold tracking-wide text-xs uppercase">MapMyTrim Rewards</span>
+            </div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <h3 className="text-4xl font-black">{user.loyaltyPoints || 0}</h3>
+              <span className="text-lg font-medium opacity-80">Points</span>
+            </div>
+            <p className="text-sm opacity-80 mb-6">You're {100 - ((user.loyaltyPoints || 0) % 100)} points away from your next reward!</p>
+
+            <div className="w-full bg-black/20 rounded-full h-2 mb-2">
+              <div
+                className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
+                style={{ width: `${((user.loyaltyPoints || 0) % 100)}%` }}
+              ></div>
+            </div>
+          </div>
         </Card>
 
         {/* My Appointments */}

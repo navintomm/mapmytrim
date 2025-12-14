@@ -210,6 +210,7 @@ export default function SalonDetailPage() {
           salonId={salonId}
           salonName={salon.name}
           services={services}
+          stylists={stylists}
           userId={user.id}
           userName={user.name || user.email || 'Guest'}
         />

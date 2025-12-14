@@ -6,6 +6,7 @@ export interface User {
   role: 'customer' | 'owner' | 'admin';
   activeCheckIn?: ActiveCheckIn;
   createdAt: Date;
+  loyaltyPoints?: number;
 }
 export interface ActiveCheckIn {
   shopId: string;

@@ -26,7 +26,10 @@ export interface Salon {
   lastResetDate: string; // YYYY-MM-DD
   acceptsBookings?: boolean;
   acceptsAppointments?: boolean;
-  image?: string;
+  image?: string; // Legacy field, keeping for backward compatibility
+  logo?: string;
+  gallery?: string[];
+  stylists?: Stylist[];
 }
 
 export interface GeoLocation {
@@ -37,6 +40,7 @@ export interface GeoLocation {
 export interface Stylist {
   id: string;
   name: string;
+  role?: string;
   isOnDuty: boolean;
   lastSeen: Date;
   photoURL?: string;
@@ -63,4 +67,8 @@ export interface Appointment {
   createdAt: any;
   salonName?: string;
   salonAddress?: string;
+  stylistId?: string;
+  stylistName?: string;
+  price?: number;
+  durationMin?: number;
 }

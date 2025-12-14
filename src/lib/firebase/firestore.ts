@@ -44,6 +44,13 @@ export const updateUser = async (userId: string, data: Partial<User>) => {
   await updateDoc(userRef, data);
 };
 
+export const updateUserLoyaltyPoints = async (userId: string, pointsToAdd: number) => {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    loyaltyPoints: increment(pointsToAdd)
+  });
+};
+
 export const subscribeUser = (
   userId: string,
   callback: (user: User | null) => void,

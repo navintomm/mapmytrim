@@ -20,7 +20,11 @@ import {
     addService,
     deleteService,
     updateAppointment,
-    cancelAppointment
+    cancelAppointment,
+    updateUserLoyaltyPoints,
+    addStylist,
+    updateStylist,
+    deleteStylist
 } from '@/lib/firebase/firestore';
 import { signOut } from '@/lib/firebase/auth';
 import type { Salon, QueueItem, Stylist, Service, Appointment, Feedback } from '@/types';
@@ -37,7 +41,11 @@ import {
 import emailjs from '@emailjs/browser';
 import { emailJSConfig } from '@/config/emailjs';
 
-type DashboardView = 'queue' | 'analytics' | 'stylists' | 'services' | 'appointments' | 'settings' | 'feedback';
+import { CustomerList } from '@/components/dashboard/CustomerList';
+import { AppointmentCalendar } from '@/components/dashboard/AppointmentCalendar';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
+
+type DashboardView = 'queue' | 'analytics' | 'stylists' | 'services' | 'appointments' | 'settings' | 'feedback' | 'customers' | 'calendar';
 
 export default function SalonDashboardPage() {
     const { user } = useAuthContext();
@@ -45,6 +53,9 @@ export default function SalonDashboardPage() {
     const [salon, setSalon] = useState<Salon | null>(null);
     const [loading, setLoading] = useState(true);
     const [cooldown, setCooldown] = useState(0);
+    // Staff State
+    const [newStylist, setNewStylist] = useState<{ name: string, role: string, photoURL: string }>({ name: '', role: 'Stylist', photoURL: '' });
+    const [isAddingStylist, setIsAddingStylist] = useState(false);
     const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
     const [stylists, setStylists] = useState<Stylist[]>([]);
     const [services, setServices] = useState<Service[]>([]);
@@ -54,9 +65,7 @@ export default function SalonDashboardPage() {
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
 
-    // Stylist Form State
-    const [newStylistName, setNewStylistName] = useState('');
-    const [isAddingStylist, setIsAddingStylist] = useState(false);
+
 
     // Service Form State
     const [newService, setNewService] = useState({ name: '', duration: 30, price: 0 });
@@ -64,22 +73,23 @@ export default function SalonDashboardPage() {
     const [showServiceTemplates, setShowServiceTemplates] = useState(false);
 
     // Predefined service templates
+    // Predefined service templates (INR Rates)
     const serviceTemplates = [
-        { name: 'Haircut', duration: 30, price: 25 },
-        { name: 'Beard Trim', duration: 15, price: 10 },
-        { name: 'Hair Spa', duration: 60, price: 50 },
-        { name: 'Massage', duration: 45, price: 40 },
-        { name: 'Facial', duration: 45, price: 35 },
-        { name: 'Detan', duration: 30, price: 30 },
-        { name: 'Dandruff Treatment', duration: 40, price: 45 },
-        { name: 'Hair Styling', duration: 25, price: 20 },
-        { name: 'Hair Coloring', duration: 90, price: 80 },
-        { name: 'Shave', duration: 20, price: 15 },
-        { name: 'Head Massage', duration: 20, price: 15 },
-        { name: 'Pedicure', duration: 40, price: 30 },
-        { name: 'Manicure', duration: 30, price: 25 },
-        { name: 'Waxing', duration: 30, price: 35 },
-        { name: 'Threading', duration: 15, price: 10 },
+        { name: 'Haircut', duration: 30, price: 250 },
+        { name: 'Beard Trim', duration: 15, price: 150 },
+        { name: 'Hair Spa', duration: 60, price: 800 },
+        { name: 'Massage', duration: 45, price: 600 },
+        { name: 'Facial', duration: 45, price: 500 },
+        { name: 'Detan', duration: 30, price: 400 },
+        { name: 'Dandruff Treatment', duration: 40, price: 650 },
+        { name: 'Hair Styling', duration: 25, price: 300 },
+        { name: 'Hair Coloring', duration: 90, price: 1500 },
+        { name: 'Shave', duration: 20, price: 100 },
+        { name: 'Head Massage', duration: 20, price: 200 },
+        { name: 'Pedicure', duration: 40, price: 500 },
+        { name: 'Manicure', duration: 30, price: 400 },
+        { name: 'Waxing', duration: 30, price: 450 },
+        { name: 'Threading', duration: 15, price: 50 },
     ];
 
     useEffect(() => {
@@ -194,15 +204,17 @@ export default function SalonDashboardPage() {
     // Stylist Handlers
     const handleAddStylist = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!salon || !newStylistName.trim()) return;
+        if (!salon || !newStylist.name.trim()) return;
         setIsAddingStylist(true);
         try {
             await addStylist(salon.id, {
-                name: newStylistName,
+                name: newStylist.name,
+                role: newStylist.role || 'Stylist',
                 isOnDuty: true,
-                lastSeen: new Date()
+                lastSeen: new Date(),
+                photoURL: newStylist.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${newStylist.name}`
             });
-            setNewStylistName('');
+            setNewStylist({ name: '', role: 'Stylist', photoURL: '' });
         } catch (error) {
             console.error("Failed to add stylist", error);
         } finally {
@@ -314,6 +326,18 @@ export default function SalonDashboardPage() {
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeView === 'stylists' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <UserCheck size={20} /> Stylists
+                        </button>
+                        <button
+                            onClick={() => setActiveView('customers')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeView === 'customers' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Users size={20} /> Clients
+                        </button>
+                        <button
+                            onClick={() => setActiveView('calendar')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeView === 'calendar' ? 'bg-purple-50 text-purple-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Calendar size={20} /> Calendar
                         </button>
                         <button
                             onClick={() => setActiveView('settings')}
@@ -494,7 +518,7 @@ export default function SalonDashboardPage() {
                                                         </div>
                                                         <div className="flex items-center justify-between text-xs text-gray-500">
                                                             <span>{template.duration} min</span>
-                                                            <span className="font-bold text-purple-600">${template.price}</span>
+                                                            <span className="font-bold text-purple-600">₹{template.price}</span>
                                                         </div>
                                                     </button>
                                                 ))}
@@ -523,7 +547,7 @@ export default function SalonDashboardPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price ($)</label>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price (₹)</label>
                                                 <div className="flex gap-2">
                                                     <input
                                                         type="number"
@@ -555,7 +579,7 @@ export default function SalonDashboardPage() {
                                                         <h4 className="font-bold text-gray-900">{service.name}</h4>
                                                         <div className="flex items-center gap-3 text-sm text-gray-500">
                                                             <span className="flex items-center gap-1"><Clock size={14} /> {service.durationMin} mins</span>
-                                                            <span className="flex items-center gap-1"><DollarSign size={14} /> ${service.price}</span>
+                                                            <span className="flex items-center gap-1"><DollarSign size={14} /> ₹{service.price}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -570,6 +594,111 @@ export default function SalonDashboardPage() {
                                         {services.length === 0 && (
                                             <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-100 rounded-xl">
                                                 No services menu created yet. Add your standard services!
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        {/* VIEW: STYLISTS (STAFF MANAGEMENT) */}
+                        {activeView === 'stylists' && (
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                        <UserCheck size={20} className="text-blue-500" /> Staff Management
+                                    </h3>
+
+                                    {/* Add Stylist Form */}
+                                    <form onSubmit={handleAddStylist} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 p-4 bg-gray-50 rounded-2xl">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Stylist Name</label>
+                                            <input
+                                                type="text"
+                                                value={newStylist.name}
+                                                onChange={(e) => setNewStylist({ ...newStylist, name: e.target.value })}
+                                                placeholder="e.g. John Doe"
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label>
+                                            <select
+                                                value={newStylist.role}
+                                                onChange={(e) => setNewStylist({ ...newStylist, role: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                                            >
+                                                <option value="Stylist">Stylist</option>
+                                                <option value="Barber">Barber</option>
+                                                <option value="Colorist">Colorist</option>
+                                                <option value="Receptionist">Receptionist</option>
+                                                <option value="Expert">Expert</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex items-end">
+                                            <button
+                                                type="submit"
+                                                disabled={!newStylist.name.trim() || isAddingStylist}
+                                                className="w-full px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                <Plus size={20} /> Add Staff
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    {/* Stylist List */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {salon.stylists?.map((stylist) => (
+                                            <div key={stylist.id} className="p-4 bg-white border border-gray-100 rounded-xl hover:shadow-md transition-all group relative">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden">
+                                                        <img src={stylist.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${stylist.name}`} alt={stylist.name} className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-900">{stylist.name}</h4>
+                                                        <p className="text-xs text-gray-500 uppercase font-semibold">{stylist.role || 'Stylist'}</p>
+                                                        <div className={`mt-1 text-xs px-2 py-0.5 rounded-full inline-block ${stylist.isOnDuty ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {stylist.isOnDuty ? 'On Duty' : 'Off Duty'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                                    <button
+                                                        onClick={async () => {
+                                                            const updatedStylists = salon.stylists?.map(s => s.id === stylist.id ? { ...s, isOnDuty: !s.isOnDuty } : s);
+                                                            if (updatedStylists) {
+                                                                setSalon({ ...salon, stylists: updatedStylists });
+                                                                await updateSalon(salon.id, { stylists: updatedStylists });
+                                                            }
+                                                        }}
+                                                        className="p-1.5 bg-gray-100 hover:bg-white border hover:border-gray-200 rounded-lg text-gray-600 shadow-sm"
+                                                        title="Toggle Duty"
+                                                    >
+                                                        <Settings size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!confirm('Remove this stylist?')) return;
+                                                            const updatedStylists = salon.stylists?.filter(s => s.id !== stylist.id);
+                                                            if (updatedStylists) {
+                                                                setSalon({ ...salon, stylists: updatedStylists });
+                                                                await updateSalon(salon.id, { stylists: updatedStylists });
+                                                            }
+                                                        }}
+                                                        className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-red-600 shadow-sm"
+                                                        title="Remove"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {(!salon.stylists || salon.stylists.length === 0) && (
+                                            <div className="col-span-full py-10 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-2xl">
+                                                <UserPlus size={48} className="mx-auto mb-3 opacity-20" />
+                                                <p>No staff added yet.</p>
                                             </div>
                                         )}
                                     </div>
@@ -619,12 +748,17 @@ export default function SalonDashboardPage() {
                                                                     onClick={async () => {
                                                                         try {
                                                                             await updateAppointment(appointment.id, { status: 'completed' });
+                                                                            // Award Loyalty Points (e.g., 10 points)
+                                                                            if (appointment.userId) {
+                                                                                await updateUserLoyaltyPoints(appointment.userId, 10);
+                                                                                console.log(`Awarded 10 points to ${appointment.userId}`);
+                                                                            }
                                                                         } catch (error) {
                                                                             console.error('Failed to mark complete:', error);
                                                                         }
                                                                     }}
                                                                     className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                                    title="Mark as Completed"
+                                                                    title="Mark as Completed & Award Points"
                                                                 >
                                                                     <Check size={18} />
                                                                 </button>
@@ -906,6 +1040,34 @@ export default function SalonDashboardPage() {
                                             </label>
                                         </div>
 
+                                        {/* Salon Branding (Logo) */}
+                                        <div className="p-4 bg-gray-50 rounded-xl">
+                                            <h4 className="font-bold text-gray-900 mb-2">Salon Logo</h4>
+                                            <p className="text-sm text-gray-500 mb-3">Enter a URL for your salon's logo.</p>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="https://example.com/logo.png"
+                                                    value={salon.logo || ''}
+                                                    onChange={(e) => setSalon({ ...salon, logo: e.target.value })}
+                                                    onBlur={async (e) => {
+                                                        const newVal = e.target.value;
+                                                        try {
+                                                            await updateSalon(salon.id, { logo: newVal });
+                                                        } catch (error) {
+                                                            console.error('Failed to update logo:', error);
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                                />
+                                                {salon.logo && (
+                                                    <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-1">
+                                                        <img src={salon.logo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         {/* Average Service Time */}
                                         <div className="p-4 bg-gray-50 rounded-xl">
                                             <label className="block font-bold text-gray-900 mb-2">Average Service Time (minutes)</label>
@@ -931,11 +1093,25 @@ export default function SalonDashboardPage() {
                                 </div>
                             </div>
                         )}
+                        {/* VIEW: CUSTOMERS (CRM) */}
+                        {activeView === 'customers' && (
+                            <CustomerList appointments={appointments} />
+                        )}
+
+                        {/* VIEW: CALENDAR */}
+                        {activeView === 'calendar' && (
+                            <AppointmentCalendar appointments={appointments} timings={salon.timings} />
+                        )}
 
                         {/* VIEW: ANALYTICS */}
                         {activeView === 'analytics' && (
-                            <div className="grid grid-cols-1 gap-6">
-                                {/* Quick Stats Row */}
+                            <div className="space-y-6">
+                                <RevenueChart appointments={appointments} />
+
+                                {/* Legacy Queue Chart if needed, or purely Revenue now? Let's keep the queue chart as secondary below if desired, or just replace it. 
+                                    The prompt asked for Revenue Analytics. Let's prioritize RevenueChart. 
+                                    I will keep the old Traffic Trends chart below the Revenue Chart for completeness. */}
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                                         <div>
@@ -953,7 +1129,6 @@ export default function SalonDashboardPage() {
                                     </div>
                                 </div>
 
-                                {/* Chart */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-6">Traffic Trends</h3>
                                     <div className="h-64 w-full">

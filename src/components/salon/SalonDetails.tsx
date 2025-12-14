@@ -22,8 +22,12 @@ export const SalonDetails: React.FC<SalonDetailsProps> = ({ salon, stylists = []
       {/* Header Section */}
       <div className="p-6 bg-gradient-to-r from-blue-50/50 to-purple-50/50 border-b border-gray-100">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
-            <Scissors size={28} />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-lg transform transition-transform hover:scale-105 overflow-hidden">
+            {salon.logo || salon.image ? (
+              <img src={salon.logo || salon.image} alt={salon.name} className="w-full h-full object-cover" />
+            ) : (
+              <Scissors size={28} />
+            )}
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">{salon.name}</h1>
