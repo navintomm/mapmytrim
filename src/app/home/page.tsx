@@ -120,7 +120,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 flex flex-col relative overflow-hidden">
         {salonsLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -129,11 +129,13 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === 'map' ? (
-          <SalonMap
-            salons={salons}
-            userLocation={userLocation}
-            onSalonClick={handleSalonClick}
-          />
+          <div className="flex-1 relative w-full h-full">
+            <SalonMap
+              salons={salons}
+              userLocation={userLocation}
+              onSalonClick={handleSalonClick}
+            />
+          </div>
         ) : (
           <div className="h-full overflow-auto px-4 py-6">
             <div className="max-w-4xl mx-auto">
