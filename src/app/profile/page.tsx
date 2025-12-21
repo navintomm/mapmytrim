@@ -68,6 +68,7 @@ export default function ProfilePage() {
 
     // Convert to array and sort by date/time descending (newest first)
     return Object.values(groups).sort((a, b) => {
+      // Use safe date parsing for Safari compatibility
       const dateA = new Date(`${a[0].date}T${a[0].time}`);
       const dateB = new Date(`${b[0].date}T${b[0].time}`);
       return dateB.getTime() - dateA.getTime();

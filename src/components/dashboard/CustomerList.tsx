@@ -28,7 +28,7 @@ export function CustomerList({ appointments }: CustomerListProps) {
             // Skip if cancelled? Maybe show them still. Let's show everyone.
 
             const existing = customerMap.get(appt.userId);
-            const apptDate = new Date(appt.date + ' ' + appt.time);
+            const apptDate = new Date(`${appt.date}T${appt.time}`);
             const spent = appt.price || 0;
 
             if (!existing) {
