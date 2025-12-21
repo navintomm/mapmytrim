@@ -209,6 +209,7 @@ export default function SalonDetailPage() {
           onClose={() => setShowBookingModal(false)}
           salonId={salonId}
           salonName={salon.name}
+          salonAddress={salon.address}
           services={services}
           stylists={stylists}
           userId={user.id}

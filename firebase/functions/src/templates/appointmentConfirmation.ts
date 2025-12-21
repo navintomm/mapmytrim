@@ -25,28 +25,18 @@ export const appointmentConfirmationTemplate = `
       <p>Hi {{userName}},</p>
       <p>Your appointment at <strong>{{salonName}}</strong> has been successfully booked. We're looking forward to seeing you!</p>
       
-      <div class="details">
-        <div class="detail-row">
-          <strong>📅 Date:</strong>
-          <span>{{date}}</span>
+      <div class="details" style="text-align: center;">
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #a855f7;">
+          {{date}} • {{time}}
         </div>
-        <div class="detail-row">
-          <strong>⏰ Time:</strong>
-          <span>{{time}}</span>
+        <div style="font-size: 16px; margin-bottom: 5px;">
+          {{serviceName}} {{#if stylistName}}with {{stylistName}}{{/if}}
         </div>
-        <div class="detail-row">
-          <strong>✂️ Service:</strong>
-          <span>{{serviceName}}</span>
+        <div style="font-size: 14px; color: #555; margin-bottom: 10px;">
+          at {{salonName}}
         </div>
-        {{#if stylistName}}
-        <div class="detail-row">
-          <strong>👤 Stylist:</strong>
-          <span>{{stylistName}}</span>
-        </div>
-        {{/if}}
-        <div class="detail-row">
-          <strong>💰 Total:</strong>
-          <span>\${{price}}</span>
+        <div style="font-size: 20px; font-weight: bold; color: #333;">
+          Total: \${{price}}
         </div>
       </div>
 

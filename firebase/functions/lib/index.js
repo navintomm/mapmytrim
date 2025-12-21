@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCheckIn = exports.onFeedbackCreate = exports.onAppointmentCreate = exports.autoCheckoutWorker = exports.submitSalonRating = exports.adjustSalonQueue = exports.toggleStylistDuty = exports.checkoutCustomer = void 0;
+exports.createCheckIn = exports.onFeedbackCreate = exports.replyToFeedback = exports.onAppointmentUpdate = exports.onUserCreate = exports.onAppointmentCreate = exports.autoCheckoutWorker = exports.submitSalonRating = exports.adjustSalonQueue = exports.toggleStylistDuty = exports.checkoutCustomer = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 admin.initializeApp();
@@ -49,6 +49,9 @@ var autoCheckout_1 = require("./autoCheckout");
 Object.defineProperty(exports, "autoCheckoutWorker", { enumerable: true, get: function () { return autoCheckout_1.autoCheckoutWorker; } });
 var emailTriggers_1 = require("./triggers/emailTriggers");
 Object.defineProperty(exports, "onAppointmentCreate", { enumerable: true, get: function () { return emailTriggers_1.onAppointmentCreate; } });
+Object.defineProperty(exports, "onUserCreate", { enumerable: true, get: function () { return emailTriggers_1.onUserCreate; } });
+Object.defineProperty(exports, "onAppointmentUpdate", { enumerable: true, get: function () { return emailTriggers_1.onAppointmentUpdate; } });
+Object.defineProperty(exports, "replyToFeedback", { enumerable: true, get: function () { return emailTriggers_1.replyToFeedback; } });
 var feedbackTriggers_1 = require("./triggers/feedbackTriggers");
 Object.defineProperty(exports, "onFeedbackCreate", { enumerable: true, get: function () { return feedbackTriggers_1.onFeedbackCreate; } });
 const db = admin.firestore();

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, MapPin, Calendar, LogOut, Star, Award } from 'lucide-react';
+import { User, MapPin, Calendar, LogOut, Star, Award, Clock, Scissors } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -56,45 +56,62 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleCancelAppointment = async (appointmentId: string) => {
-    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+  // Group appointments
+  const groupedAppointments = React.useMemo(() => {
+    const groups: Record<string, Appointment[]> = {};
+    appointments.forEach(appt => {
+      // Create a unique key for the booking event
+      const key = `${appt.salonId}_${appt.date}_${appt.time}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(appt);
+    });
+
+    // Convert to array and sort by date/time descending (newest first)
+    return Object.values(groups).sort((a, b) => {
+      const dateA = new Date(`${a[0].date}T${a[0].time}`);
+      const dateB = new Date(`${b[0].date}T${b[0].time}`);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [appointments]);
+
+  const handleCancelGroup = async (group: Appointment[]) => {
+    if (!group.length) return;
+    const first = group[0];
+
+    if (!confirm(`Are you sure you want to cancel your appointment at ${first.salonName || 'Unknown Salon'}?`)) return;
 
     try {
-      await cancelAppointment(appointmentId);
+      // Cancel all in parallel
+      await Promise.all(group.map(a => cancelAppointment(a.id)));
 
-      // EMAIL NOTIFICATION
+      // Send ONE email for the group
       try {
-        // Find the appointment to get details (optimistic update happens after, so we might need to find it from state `appointments`)
-        const appt = appointments.find(a => a.id === appointmentId);
-        if (appt && emailJSConfig.templateId) {
+        if (emailJSConfig.templateId) {
           await emailjs.send(
             emailJSConfig.serviceId,
             emailJSConfig.templateId,
             {
-              to_email: user?.email, // Notify the user themselves
+              to_email: user?.email,
               email_subject: `Appointment Cancelled 📅`,
               email_title: 'Cancellation Confirmed',
-              email_body: `Your appointment at ${appt.salonName} has been cancelled as requested.`,
-
+              email_body: `Your booking at ${first.salonName || 'Salon'} for ${group.map(g => g.serviceName).join(', ')} has been cancelled.`,
               details_label_1: 'Salon',
-              details_value_1: appt.salonName,
+              details_value_1: first.salonName || 'N/A',
               details_label_2: 'Date',
-              details_value_2: appt.date,
-              details_label_3: 'Reason',
-              details_value_3: 'User requested cancellation',
+              details_value_2: `${first.date} at ${first.time}`,
+              details_label_3: 'Services',
+              details_value_3: group.map(g => g.serviceName).join(', '),
             },
             emailJSConfig.publicKey
           );
-          console.log('✅ Cancellation email sent');
         }
       } catch (e) {
         console.error('Email failed', e);
       }
-      // Refresh appointments
-      const updated = await getUserAppointments(user!.id);
-      setAppointments(updated);
+
+      // Refresh is handled by subscription
     } catch (error) {
-      console.error('Failed to cancel appointment:', error);
+      console.error('Failed to cancel appointment group:', error);
       alert('Failed to cancel appointment');
     }
   };
@@ -220,7 +237,8 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        {/* My Appointments */}
+        {/* My Appointments (Grouped) */}
+        {/* My Appointments (Unified) */}
         <Card>
           <h2 className="text-xl font-bold mb-4">My Appointments</h2>
           {loadingAppointments ? (
@@ -233,132 +251,70 @@ export default function ProfilePage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {/* Upcoming Appointments */}
-              {appointments.filter(a => a.status === 'booked').length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    📅 Upcoming
-                  </h3>
-                  <div className="space-y-3">
-                    {appointments
-                      .filter(a => a.status === 'booked')
-                      .map((appointment) => (
-                        <div key={appointment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <h4 className="font-bold text-gray-900 mb-1">{appointment.serviceName}</h4>
-                              <p className="text-sm text-gray-600 mb-2">
-                                📍 Salon ID: {appointment.salonId}
-                              </p>
-                              <div className="flex items-center gap-4 text-sm">
-                                <span className="flex items-center gap-1">
-                                  📅 {appointment.date}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  🕐 {appointment.time}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCancelAppointment(appointment.id)}
-                              className="text-red-600 hover:bg-red-50"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
+              {groupedAppointments.map((group) => {
+                const first = group[0];
+                const totalPrice = group.reduce((sum, item) => sum + (item.price || 0), 0);
+                const isCancelled = first.status === 'cancelled';
+                const isCompleted = first.status === 'completed';
+                const isBooked = first.status === 'booked';
 
-              {/* Past Appointments */}
-              {appointments.filter(a => a.status === 'completed').length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    ✅ Past Appointments
-                  </h3>
-                  <div className="space-y-3">
-                    {appointments
-                      .filter(a => a.status === 'completed')
-                      .slice(0, 5)
-                      .map((appointment) => (
-                        <div key={appointment.id} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-semibold text-gray-800">{appointment.serviceName}</h4>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                                <span>📅 {appointment.date}</span>
-                                <span>🕐 {appointment.time}</span>
-                              </div>
-                            </div>
-                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
-                              Completed
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
+                let statusLabel = 'Booked';
+                let statusColor = 'bg-purple-100 text-purple-700';
 
-              {/* Cancelled Appointments */}
-              {appointments.filter(a => a.status === 'cancelled').length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    ❌ Cancelled
-                  </h3>
-                  <div className="space-y-3">
-                    {appointments
-                      .filter(a => a.status === 'cancelled')
-                      .slice(0, 3)
-                      .map((appointment) => (
-                        <div key={appointment.id} className="border border-red-100 rounded-lg p-4 bg-red-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-semibold text-gray-800">{appointment.serviceName}</h4>
-                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                                <span>📅 {appointment.date}</span>
-                                <span>🕐 {appointment.time}</span>
-                              </div>
-                            </div>
-                            <span className="text-xs bg-red-200 text-red-700 px-2 py-1 rounded-full">
-                              Cancelled
-                            </span>
-                          </div>
+                if (isCancelled) {
+                  statusLabel = 'Cancelled';
+                  statusColor = 'bg-red-100 text-red-700';
+                } else if (isCompleted) {
+                  statusLabel = 'Completed';
+                  statusColor = 'bg-green-100 text-green-700';
+                }
+
+                return (
+                  <div key={first.id} className={`border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all ${isCancelled ? 'bg-gray-50 opacity-75' : 'bg-white'}`}>
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      {/* Left Section: Info */}
+                      <div className="space-y-1 flex-1">
+                        <div className="text-lg font-bold text-gray-900">
+                          {first.date} at {first.time}
                         </div>
-                      ))}
+                        <div className="text-gray-700">
+                          <span className="font-medium">{group.map(g => g.serviceName).join(', ')}</span> at <span className="font-semibold">{first.salonName}</span>
+                        </div>
+                        <div className="text-sm text-gray-500 flex items-center gap-1">
+                          <MapPin size={12} />
+                          {first.salonAddress || `Salon ${first.salonId}`}
+                        </div>
+                        <div className="font-bold text-purple-700 pt-1">
+                          Total: ₹{totalPrice}
+                        </div>
+                      </div>
+
+                      {/* Right Section: Status & Actions */}
+                      <div className="flex flex-row md:flex-col justify-between items-center md:items-end gap-4 border-t md:border-t-0 border-dashed border-gray-200 pt-4 md:pt-0 mt-2 md:mt-0">
+                        <div className={`hidden md:block px-3 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                          {statusLabel}
+                        </div>
+
+
+
+                        {isBooked && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelGroup(group)}
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 w-full md:w-auto"
+                          >
+                            Cancel Booking
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
         </Card>
-
-        {/* Remove or update Active Check-in section */}
-        {/* Commenting out as check-in was removed */}
-        {/*
-        {user.activeCheckIn && (
-          <Card>
-            <h2 className="text-xl font-bold mb-4">Active Check-in</h2>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-green-700 font-semibold mb-2">
-                You have an active check-in
-              </p>
-              <Button
-                onClick={() => router.push(`/salon/${user.activeCheckIn!.shopId}`)}
-                variant="primary"
-              >
-                View Details
-              </Button>
-            </div>
-          </Card>
-        )}
-        */}
-
-
       </main>
     </div>
   );

@@ -63,7 +63,7 @@ export interface Appointment {
   serviceName: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:MM
-  status: 'booked' | 'completed' | 'cancelled';
+  status: 'booked' | 'completed' | 'cancelled' | 'pending' | 'confirmed';
   createdAt: any;
   salonName?: string;
   salonAddress?: string;

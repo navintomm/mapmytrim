@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { X, Calendar, Clock, Scissors, UserCheck } from 'lucide-react';
 import type { Service, Stylist } from '@/types';
-import { createAppointment } from '@/lib/firebase/firestore';
-import emailjs from '@emailjs/browser';
-import { emailJSConfig } from '@/config/emailjs';
+import { createAppointment, getSalonAppointments } from '@/lib/firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 interface BookingModalProps {
@@ -14,13 +12,14 @@ interface BookingModalProps {
     onClose: () => void;
     salonId: string;
     salonName: string;
+    salonAddress: string;
     services: Service[];
     stylists?: Stylist[];
     userId: string;
     userName: string;
 }
 
-export function BookingModal({ isOpen, onClose, salonId, salonName, services, stylists = [], userId, userName }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, salonId, salonName, salonAddress, services, stylists = [], userId, userName }: BookingModalProps) {
     const router = useRouter();
     const [selectedServices, setSelectedServices] = useState<Service[]>([]);
     const [selectedDate, setSelectedDate] = useState('');
@@ -28,8 +27,6 @@ export function BookingModal({ isOpen, onClose, salonId, salonName, services, st
     const [selectedStylistId, setSelectedStylistId] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-
-    // ... timeSlots logic
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,7 +41,36 @@ export function BookingModal({ isOpen, onClose, salonId, salonName, services, st
         const selectedStylist = stylists.find(s => s.id === selectedStylistId);
 
         try {
-            // Create appointments
+            // Check Availability
+            const existingAppointments = await getSalonAppointments(salonId, selectedDate);
+
+            // Simple Availability Logic:
+            // 1. If specific stylist selected: Check if they are busy at this time.
+            // 2. If 'Any' stylist selected: Check if ALL stylists are busy (count >= total stylists).
+            // Note: This assumes 1 concurrent appointment per stylist.
+
+            let isSlotTaken = false;
+
+            if (selectedStylistId) {
+                isSlotTaken = existingAppointments.some(appt =>
+                    appt.time === selectedTime &&
+                    (appt.stylistId === selectedStylistId || appt.stylistId === 'any' /* blocked by generic booking? maybe safely yes */)
+                );
+            } else {
+                // "Any" logic: are there fewer bookings at this time than total stylists?
+                // Only count valid stylists (not 'any' placeholder if it exists in list, though stylists prop usually implementation ones)
+                const activeStylistsCount = stylists.length || 1; // Fallback to 1 if no stylists defined (e.g. solo owner)
+                const bookingsAtTime = existingAppointments.filter(appt => appt.time === selectedTime).length;
+                if (bookingsAtTime >= activeStylistsCount) {
+                    isSlotTaken = true;
+                }
+            }
+
+            if (isSlotTaken) {
+                throw new Error('This time slot is no longer available. Please choose another.');
+            }
+
+            // Create appointments (Direct Booking)
             for (const service of selectedServices) {
                 await createAppointment({
                     salonId,
@@ -54,45 +80,18 @@ export function BookingModal({ isOpen, onClose, salonId, salonName, services, st
                     serviceName: service.name,
                     date: selectedDate,
                     time: selectedTime,
-                    status: 'booked',
+                    status: 'booked', // Direct booking
                     createdAt: new Date(),
                     stylistId: selectedStylistId || 'any',
                     stylistName: selectedStylist?.name || 'Any Stylist',
                     price: service.price,
-                    durationMin: service.durationMin || 30
+                    durationMin: service.durationMin || 30,
+                    salonName: salonName,
+                    salonAddress: salonAddress
                 });
             }
-            // ... email sending and redirect ...
-            try {
-                const auth = getAuth();
-                const userEmail = auth.currentUser?.email;
 
-                if (userEmail) {
-                    await emailjs.send(
-                        emailJSConfig.serviceId,
-                        emailJSConfig.templateId,
-                        {
-                            to_email: userEmail,
-                            email_subject: `Booking Confirmed: ${salonName} 📅`,
-                            email_title: 'Appointment Confirmed',
-                            email_body: `Hi ${userName}, your appointment at ${salonName} has been successfully booked with ${selectedStylist?.name || 'Any Stylist'}.`,
-
-                            // Details
-                            details_label_1: 'Service(s)',
-                            details_value_1: selectedServices.map(s => s.name).join(', '),
-                            details_label_2: 'Date & Time',
-                            details_value_2: `${selectedDate} at ${selectedTime}`,
-                            details_label_3: 'Total Price',
-                            details_value_3: `₹${selectedServices.reduce((sum, s) => sum + (s.price || 0), 0)}`,
-                        },
-                        emailJSConfig.publicKey
-                    );
-                    console.log('📧 Confirmation email sent successfully');
-                }
-            } catch (emailError) {
-                console.error('⚠️ Email sending failed:', emailError);
-            }
-
+            alert('Appointment successfully booked! sent to your email.');
             onClose();
             router.push('/profile');
         } catch (err: any) {

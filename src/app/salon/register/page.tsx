@@ -224,6 +224,7 @@ export default function SalonRegisterPage() {
                                             initialLat={parseFloat(formData.latitude) || undefined}
                                             initialLng={parseFloat(formData.longitude) || undefined}
                                             onLocationSelect={(lat: number, lng: number) => setFormData({ ...formData, latitude: lat.toString(), longitude: lng.toString() })}
+                                            addressQuery={formData.address}
                                         />
                                     </div>
 

@@ -63,7 +63,7 @@ export default function SalonDashboardPage() {
     const [replyText, setReplyText] = useState('');
 
 
-
+    const [showAddStylist, setShowAddStylist] = useState(false);
     // Service Form State
     const [newService, setNewService] = useState({ name: '', duration: 30, price: 0 });
     const [isAddingService, setIsAddingService] = useState(false);
@@ -800,23 +800,42 @@ export default function SalonDashboardPage() {
                                         <UserCheck size={20} className="text-blue-500" /> Manage Team
                                     </h3>
 
-                                    {/* Add Stylist Form */}
-                                    <form onSubmit={handleAddStylist} className="flex gap-4 mb-8">
-                                        <input
-                                            type="text"
-                                            value={newStylist.name}
-                                            onChange={(e) => setNewStylist(prev => ({ ...prev, name: e.target.value }))}
-                                            placeholder="Enter Stylist Name"
-                                            className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                        />
+                                    {/* Add Stylist Section */}
+                                    {!showAddStylist ? (
                                         <button
-                                            type="submit"
-                                            disabled={!newStylist.name.trim() || isAddingStylist}
-                                            className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                            onClick={() => setShowAddStylist(true)}
+                                            className="mb-8 w-full py-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-500 font-bold flex items-center justify-center gap-2 hover:border-purple-500 hover:text-purple-600 hover:bg-purple-50 transition-all"
                                         >
-                                            <Plus size={20} /> Add
+                                            <Plus size={20} /> Add New Staff Member
                                         </button>
-                                    </form>
+                                    ) : (
+                                        <div className="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-4">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h4 className="font-bold text-gray-700">Add New Stylist</h4>
+                                                <button onClick={() => setShowAddStylist(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+                                            </div>
+                                            <form onSubmit={async (e) => {
+                                                await handleAddStylist(e);
+                                                setShowAddStylist(false);
+                                            }} className="flex gap-4">
+                                                <input
+                                                    type="text"
+                                                    value={newStylist.name}
+                                                    onChange={(e) => setNewStylist(prev => ({ ...prev, name: e.target.value }))}
+                                                    placeholder="Enter Stylist Name"
+                                                    className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    disabled={!newStylist.name.trim() || isAddingStylist}
+                                                    className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                                >
+                                                    Add
+                                                </button>
+                                            </form>
+                                        </div>
+                                    )}
 
                                     {/* Stylist List */}
                                     <div className="space-y-3">

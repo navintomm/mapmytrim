@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { MapPin, Crosshair } from 'lucide-react';
+import { Crosshair } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
-import { useMapEvents } from 'react-leaflet';
+import { useMap, useMapEvents } from 'react-leaflet';
 
 // Dynamically import Leaflet components
 const MapContainer = dynamic(
@@ -28,10 +28,23 @@ interface LocationPickerProps {
     initialLat?: number;
     initialLng?: number;
     onLocationSelect: (lat: number, lng: number) => void;
+    addressQuery?: string;
 }
 
+// Component to handle map view updates
+function FlyToLocation({ coords }: { coords: [number, number] | null }) {
+    const map = useMap();
+    useEffect(() => {
+        if (coords) {
+            map.flyTo(coords, 16, {
+                duration: 1.5
+            });
+        }
+    }, [coords, map]);
+    return null;
+}
 
-
+// Component to handle clicks
 function MapEvents({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
     useMapEvents({
         click(e) {
@@ -45,11 +58,13 @@ export default function LocationPicker({
     initialLat,
     initialLng,
     onLocationSelect,
+    addressQuery
 }: LocationPickerProps) {
     const [position, setPosition] = useState<[number, number] | null>(
         initialLat && initialLng ? [initialLat, initialLng] : null
     );
     const [isMounted, setIsMounted] = useState(false);
+    const markerRef = useRef(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -72,10 +87,46 @@ export default function LocationPicker({
         }
     }, [initialLat, initialLng]);
 
+    // Geocoding Effect (Address -> Map)
+    useEffect(() => {
+        if (!addressQuery || addressQuery.length < 5) return;
+
+        const delayDebounceFn = setTimeout(async () => {
+            try {
+                // Use OpenStreetMap Nominatim for free geocoding
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lon = parseFloat(data[0].lon);
+                    handleParams(lat, lon);
+                }
+            } catch (error) {
+                console.error("Geocoding failed:", error);
+            }
+        }, 1500); // 1.5s debounce
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [addressQuery]);
+
     const handleParams = (lat: number, lng: number) => {
         setPosition([lat, lng]);
         onLocationSelect(lat, lng);
     };
+
+    const eventHandlers = useMemo(
+        () => ({
+            dragend() {
+                const marker: any = markerRef.current;
+                if (marker != null) {
+                    const { lat, lng } = marker.getLatLng();
+                    handleParams(lat, lng);
+                }
+            },
+        }),
+        []
+    );
 
     const handleCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -108,14 +159,17 @@ export default function LocationPicker({
         <div className="space-y-2">
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700">Pin Location on Map</label>
-                <button
-                    type="button"
-                    onClick={handleCurrentLocation}
-                    className="text-xs flex items-center gap-1 text-purple-600 font-medium hover:text-purple-800 transition-colors"
-                >
-                    <Crosshair size={14} />
-                    Use My Current Location
-                </button>
+                <div className="flex gap-4">
+                    <span className="text-xs text-gray-400 italic">Drag pin or click to adjust</span>
+                    <button
+                        type="button"
+                        onClick={handleCurrentLocation}
+                        className="text-xs flex items-center gap-1 text-purple-600 font-medium hover:text-purple-800 transition-colors"
+                    >
+                        <Crosshair size={14} />
+                        Use My Current Location
+                    </button>
+                </div>
             </div>
 
             <div className="h-64 w-full rounded-xl overflow-hidden border border-gray-300 relative z-0">
@@ -132,15 +186,23 @@ export default function LocationPicker({
                         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <MapEvents onLocationSelect={handleParams} />
+                    <FlyToLocation coords={position} />
 
                     {position && (
-                        <Marker position={position}>
-                            <Popup>Selected Location</Popup>
+                        <Marker
+                            position={position}
+                            draggable={true}
+                            eventHandlers={eventHandlers}
+                            ref={markerRef}
+                        >
+                            <Popup>Salon Location</Popup>
                         </Marker>
                     )}
                 </MapContainer>
             </div>
-            <p className="text-xs text-gray-500">Click anywhere on the map to set the salon location.</p>
+            <p className="text-xs text-gray-500">
+                * Location will automatically update when you type the address above. You can also fine-tune it by dragging the pin.
+            </p>
         </div>
     );
 }

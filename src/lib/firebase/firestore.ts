@@ -253,24 +253,28 @@ export const getSalonAppointments = async (salonId: string, date?: string): Prom
       appointmentsRef,
       where('salonId', '==', salonId),
       where('date', '==', date),
-      where('status', '==', 'booked'),
-      orderBy('time')
+      where('status', 'in', ['booked', 'pending', 'confirmed'])
     );
   } else {
     q = query(
       appointmentsRef,
       where('salonId', '==', salonId),
-      where('status', '==', 'booked'),
-      orderBy('date'),
-      orderBy('time')
+      where('status', 'in', ['booked', 'pending', 'confirmed']),
+      orderBy('date')
     );
   }
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
+  const fetchedAppointments = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as Appointment[];
+
+  // Sort by time in memory to avoid index requirements
+  return fetchedAppointments.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.time.localeCompare(b.time);
+  });
 };
 
 export const getUserAppointments = async (userId: string): Promise<Appointment[]> => {
