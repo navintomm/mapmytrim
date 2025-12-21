@@ -129,7 +129,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === 'map' ? (
-          <div className="flex-1 relative w-full h-full">
+          <div className="flex-1 relative w-full h-full min-h-[60vh]">
             <SalonMap
               salons={salons}
               userLocation={userLocation}
