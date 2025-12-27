@@ -17,3 +17,34 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* Leaflet Map Fixes */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 0;
+}
+
+.leaflet-pane {
+  z-index: 400;
+}
+
+.leaflet-tile-pane {
+  z-index: 200;
+}
+
+.leaflet-marker-pane {
+  z-index: 600;
+}
+
+.leaflet-popup-pane {
+  z-index: 700;
+}
+
+.custom-user-marker,
+.custom-salon-marker,
+.custom-map-pin,
+.custom-location-pin {
+  background: transparent !important;
+  border: none !important;
+}

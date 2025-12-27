@@ -141,14 +141,12 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === 'map' ? (
-          <div className="flex-1 relative w-full h-full min-h-[60vh] flex flex-col">
-            <div className="flex-1 relative w-full h-full">
-              <SalonMap
-                salons={salons}
-                userLocation={userLocation}
-                onSalonClick={handleSalonClick}
-              />
-            </div>
+          <div className="flex-1 relative w-full min-h-[600px]" style={{ height: 'calc(100vh - 200px)' }}>
+            <SalonMap
+              salons={salons}
+              userLocation={userLocation}
+              onSalonClick={handleSalonClick}
+            />
           </div>
         ) : (
           <div className="h-full overflow-auto px-4 py-6">

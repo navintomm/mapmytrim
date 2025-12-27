@@ -90,13 +90,13 @@ export const SalonMap: React.FC<SalonMapProps> = ({
   }
 
   return (
-    <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-xl relative z-0 border border-slate-200">
+    <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-xl relative z-0 border border-slate-200" style={{ minHeight: '500px' }}>
       <MapContainer
         center={center}
         zoom={13}
         scrollWheelZoom={true}
         className="w-full h-full"
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', minHeight: '500px', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
