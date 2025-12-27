@@ -141,7 +141,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === 'map' ? (
-          <div className="flex-1 relative w-full min-h-[600px]" style={{ height: 'calc(100vh - 200px)' }}>
+          <div className="absolute inset-0 w-full h-full">
             <SalonMap
               salons={salons}
               userLocation={userLocation}

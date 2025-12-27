@@ -90,7 +90,7 @@ export const SalonMap: React.FC<SalonMapProps> = ({
   }
 
   return (
-    <div className="w-full h-full rounded-[2rem] overflow-hidden shadow-xl relative z-0 border border-slate-200" style={{ minHeight: '500px' }}>
+    <div className="w-full h-full relative z-0" style={{ minHeight: '500px' }}>
       <MapContainer
         center={center}
         zoom={13}
