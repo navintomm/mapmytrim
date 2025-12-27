@@ -63,7 +63,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-lg shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -132,7 +132,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
+      <main className="flex-1 flex flex-col relative h-0 overflow-hidden">
         {salonsLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
