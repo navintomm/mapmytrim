@@ -10,12 +10,19 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
+  background: linear-gradient(to bottom,
       transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+  /* iOS Safari fixes */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS Safari viewport height fix */
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
+  }
 }
 
 /* Leaflet Map Fixes */
@@ -23,6 +30,9 @@ body {
   height: 100% !important;
   width: 100% !important;
   z-index: 0;
+  /* iOS Safari touch improvements */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x pan-y;
 }
 
 .leaflet-pane {
@@ -47,4 +57,17 @@ body {
 .custom-location-pin {
   background: transparent !important;
   border: none !important;
+}
+
+/* iOS Safari SVG rendering fix */
+svg {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Prevent iOS Safari bounce/overscroll */
+html,
+body {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
