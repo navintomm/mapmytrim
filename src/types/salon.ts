@@ -30,6 +30,7 @@ export interface Salon {
   logo?: string;
   gallery?: string[];
   stylists?: Stylist[];
+  rating?: number;
 }
 
 export interface GeoLocation {

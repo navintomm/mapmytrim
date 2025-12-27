@@ -68,15 +68,23 @@ export default function LocationPicker({
 
     useEffect(() => {
         setIsMounted(true);
-        // Fix for Leaflet icon not showing
-        import('leaflet').then((L) => {
-            // @ts-ignore
-            delete L.Icon.Default.prototype._getIconUrl;
-            L.Icon.Default.mergeOptions({
-                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            });
+    }, []);
+
+    const customMarkerIcon = useMemo(() => {
+        if (typeof window === 'undefined') return null;
+        const L = require('leaflet');
+        return L.divIcon({
+            html: `
+                <div class="relative flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40" class="drop-shadow-lg">
+                        <path fill="#7c3aed" stroke="#ffffff" stroke-width="2" d="M15,0 C6.7,0 0,6.7 0,15 C0,26.2 15,40 15,40 S30,26.2 30,15 C30,6.7 23.3,0 15,0 Z" />
+                        <circle cx="15" cy="15" r="5" fill="#ffffff" />
+                    </svg>
+                </div>
+            `,
+            className: 'custom-location-pin',
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
         });
     }, []);
 
@@ -194,6 +202,7 @@ export default function LocationPicker({
                             draggable={true}
                             eventHandlers={eventHandlers}
                             ref={markerRef}
+                            icon={customMarkerIcon || undefined}
                         >
                             <Popup>Salon Location</Popup>
                         </Marker>

@@ -5,11 +5,23 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useSalons } from '@/lib/hooks/useSalons';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
-import { SalonMap } from '@/components/maps/SalonMap';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { SalonCard } from '@/components/salon/SalonCard';
 import { Button } from '@/components/ui/Button';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { Salon } from '@/types/salon';
+import dynamic from 'next/dynamic';
+
+const SalonMap = dynamic(
+  () => import('@/components/maps/SalonMap').then((mod) => mod.SalonMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-slate-100 rounded-3xl animate-pulse flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    ),
+  }
+);
 
 export default function HomePage() {
   const router = useRouter();
@@ -120,7 +132,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative overflow-hidden">
+      <main className="flex-1 flex flex-col relative min-h-0 overflow-hidden">
         {salonsLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -129,12 +141,14 @@ export default function HomePage() {
             </div>
           </div>
         ) : viewMode === 'map' ? (
-          <div className="flex-1 relative w-full h-full min-h-[60vh]">
-            <SalonMap
-              salons={salons}
-              userLocation={userLocation}
-              onSalonClick={handleSalonClick}
-            />
+          <div className="flex-1 relative w-full h-full min-h-[60vh] flex flex-col">
+            <div className="flex-1 relative w-full h-full">
+              <SalonMap
+                salons={salons}
+                userLocation={userLocation}
+                onSalonClick={handleSalonClick}
+              />
+            </div>
           </div>
         ) : (
           <div className="h-full overflow-auto px-4 py-6">
